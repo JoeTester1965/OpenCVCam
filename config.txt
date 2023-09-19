@@ -1,0 +1,23 @@
+[cameras]
+
+side_alley = rtsp://192.168.1.12:554/user=admin&password=password&channel=1&stream=1.sdp
+back_garden = rtsp://192.168.1.16:554/user=admin&password=password&channel=1&stream=1.sdp
+front_garden = rtsp://192.168.1.15:554/user=admin&password=password&channel=1&stream=1.sdp
+drive = rtsp://192.168.1.14:554/user=admin&password=password&channel=1&stream=1.sdp
+
+[motion]
+gaussian_kernel_size = 11
+pixel_delta_threshold = 5
+fps = 10
+
+[general]
+
+# DEBUG,INFO,WARNING,ERROR
+log_level = DEBUG
+
+display_camera_windows = 1
+
+logfile = ./logfile.txt
+
+
+
