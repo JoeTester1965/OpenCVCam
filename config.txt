@@ -18,6 +18,3 @@ log_level = DEBUG
 display_camera_windows = 1
 
 logfile = ./logfile.txt
-
-
-
