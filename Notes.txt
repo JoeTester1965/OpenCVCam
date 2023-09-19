@@ -1,4 +1,4 @@
-Add in motion vector -: at least x (2?) overlapping (with some expansion factor) boxes within y (2*fps?) frames 
+Save motion images in dir like cudacam
 
 Camera up / down management
 

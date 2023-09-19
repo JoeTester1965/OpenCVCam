@@ -8,6 +8,33 @@ from threading import Thread
 import time
 import os
 
+class MotionVectorWeight(object):
+    def __init__(self, threshold, fade, gain):
+        self.threshold = threshold
+        self.fade = fade
+        self.gain = gain
+        self.weight = 0
+        self.lastx = 0
+        self.lasty = 0
+        self.lastw = 0
+        self.lasth = 0
+
+    def update(self, x, y, w, h):
+        if (((x+w) < self.lastx) or (x > (self.lastx+self.lastw))) and (((y+h) < self.lasty) or (y > (self.lasty+self.lasth))):
+            # motion rectangles not overlapping
+            self.weight = self.weight - (1 * self.fade)
+        else:
+            self.weight = self.weight + (1 * self.gain)
+
+        if self.weight < 0:
+           self.weight = 0 
+        
+        if self.weight > self.threshold:
+            self.weight = 0
+            return True
+         
+        return False
+
 class VideoStreamWidget(object):
     def __init__(self, name, uri, gaussian_kernel_size, pixel_delta_threshold, 
                     fps, masks_directory, minimum_motion_screen_percent):
@@ -61,8 +88,12 @@ class VideoStreamWidget(object):
             for contour in contours[:1]:
                 x,y,w,h = cv2.boundingRect(contour)
                 if (((w * h) / self.image_pixels) * 100) > minimum_motion_screen_percent:
-                    cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
-                    logger.info("%s had object at %d,%d:%d,%d", self.name, x,y,w,h)
+                    logger.debug("%s had object at %d,%d:%d,%d", self.name, x,y,w,h)
+                    if motion[self.name].update( x, y, w, h) == True:
+                        cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
+                        logger.info("%s has motion detected", self.name)
+                    else:
+                        cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,255,0),3)
 
              # sleep within framerate for each camera (separate thread)
             time.sleep(1/fps/2)
@@ -95,6 +126,9 @@ gaussian_kernel_size = int(config['motion']['gaussian_kernel_size'])
 pixel_delta_threshold = int(config['motion']['pixel_delta_threshold'])
 fps = int(config['motion']['fps'])
 minimum_motion_screen_percent = float(config['motion']['minimum_motion_screen_percent'])
+threshold  = float(config['motion']['threshold'])
+fade  = float(config['motion']['fade'])
+gain  = float(config['motion']['gain'])
 
 display_camera_windows = int(config['general']['display_camera_windows'])
 masks_directory = config['general']['masks_directory']
@@ -113,9 +147,12 @@ logger.info("OpenCVCam started")
 
 streams = {}
 
+motion = {}
+
 for name,uri in cameras.items():
     streams[name] = VideoStreamWidget(name, uri, gaussian_kernel_size, pixel_delta_threshold, 
                                             fps, masks_directory, minimum_motion_screen_percent)
+    motion[name] = MotionVectorWeight(threshold, fade, gain)
 
 while True:
     for name,uri in cameras.items():

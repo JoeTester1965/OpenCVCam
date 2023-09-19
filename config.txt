@@ -9,12 +9,15 @@ drive = rtsp://192.168.1.14:554/user=admin&password=password&channel=1&stream=1.
 gaussian_kernel_size = 11
 pixel_delta_threshold = 5
 fps = 10
+minimum_motion_screen_percent = 0.5
+threshold = 2.0
+fade = 0.1
+gain = 0.5
 
 [general]
 
 # DEBUG,INFO,WARNING,ERROR
-log_level = DEBUG
-
+log_level = INFO
 display_camera_windows = 1
-
 logfile = ./logfile.txt
+masks_directory = ./masks
