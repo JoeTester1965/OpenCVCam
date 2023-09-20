@@ -1,10 +1,10 @@
 Try this:
 
 Do KISS simple algorithm for top_n_objects_to_consider:
- 1) group if nearby
- 2) consider valid motion if moves (within an extended boundary) within n seconds.
+ 1) group if nearby (VIP)
+ 2) consider valid motion if *moves at least n pixels x or y or both* *within an extended boundary* within *n seconds*
 
-Save motion images in dir like cudacam
+Save motion images in dir like cudacam (with red and white boxes)
 
 MQTT
 

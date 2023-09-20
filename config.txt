@@ -6,11 +6,14 @@ front_garden = rtsp://192.168.1.15:554/user=admin&password=password&channel=1&st
 drive = rtsp://192.168.1.14:554/user=admin&password=password&channel=1&stream=1.sdp
 
 [motion]
-gaussian_kernel_size = 11
-pixel_delta_threshold = 5
+image_rescaling_factor = 1.0
+gaussian_kernel_size = 5
+pixel_delta_threshold = 20
+delta_frame_dilation = 5
 fps = 10
-minimum_motion_screen_percent = 0.5
-top_n_objects_to_consider = 3
+minimum_motion_screen_percent = 0.1
+motion_contours_to_consider = 5
+display_contour_debug = 0
 
 [general]
 
