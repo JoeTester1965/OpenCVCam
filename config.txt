@@ -10,14 +10,11 @@ gaussian_kernel_size = 11
 pixel_delta_threshold = 5
 fps = 10
 minimum_motion_screen_percent = 0.5
-threshold = 2.0
-fade = 0.1
-gain = 0.5
+top_n_objects_to_consider = 3
 
 [general]
 
 # DEBUG,INFO,WARNING,ERROR
 log_level = INFO
-display_camera_windows = 1
 logfile = ./logfile.txt
 masks_directory = ./masks

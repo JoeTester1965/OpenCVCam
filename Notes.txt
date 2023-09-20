@@ -1,5 +1,19 @@
+Try this:
+
+Do KISS simple algorithm for top_n_objects_to_consider:
+ 1) group if nearby
+ 2) consider valid motion if moves (within an extended boundary) within n seconds.
+
 Save motion images in dir like cudacam
+
+MQTT
+
+email
+
+Saving video files in date/hh files evry hour. Stop when disk n% full.
 
 Camera up / down management
 
-Add in simple person detect model.
+Add in simple person detect model
+
+

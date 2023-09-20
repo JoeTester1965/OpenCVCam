@@ -8,33 +8,6 @@ from threading import Thread
 import time
 import os
 
-class MotionVectorWeight(object):
-    def __init__(self, threshold, fade, gain):
-        self.threshold = threshold
-        self.fade = fade
-        self.gain = gain
-        self.weight = 0
-        self.lastx = 0
-        self.lasty = 0
-        self.lastw = 0
-        self.lasth = 0
-
-    def update(self, x, y, w, h):
-        if (((x+w) < self.lastx) or (x > (self.lastx+self.lastw))) and (((y+h) < self.lasty) or (y > (self.lasty+self.lasth))):
-            # motion rectangles not overlapping
-            self.weight = self.weight - (1 * self.fade)
-        else:
-            self.weight = self.weight + (1 * self.gain)
-
-        if self.weight < 0:
-           self.weight = 0 
-        
-        if self.weight > self.threshold:
-            self.weight = 0
-            return True
-         
-        return False
-
 class VideoStreamWidget(object):
     def __init__(self, name, uri, gaussian_kernel_size, pixel_delta_threshold, 
                     fps, masks_directory, minimum_motion_screen_percent):
@@ -57,7 +30,7 @@ class VideoStreamWidget(object):
         while True:
             if self.capture.isOpened():
                 (self.status, self.frame) = self.capture.read()
-            
+
             if self.last_frame is None:
                 self.last_frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
                 self.last_frame = cv2.GaussianBlur(self.last_frame, (gaussian_kernel_size,gaussian_kernel_size), 0)
@@ -83,17 +56,20 @@ class VideoStreamWidget(object):
             self.last_frame = self.gray
             thresh = cv2.threshold(frameDelta, self.pixel_delta_threshold, 255, cv2.THRESH_BINARY)[1]
             contours = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+  
             contours = contours[0] if len(contours) == 2 else contours[1]
             contours = sorted(contours, key=cv2.contourArea, reverse=True)
-            for contour in contours[:1]:
+
+            if display_contour_debug:
+                for contour in contours:
+                    x,y,w,h = cv2.boundingRect(contour)
+                    cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,255,255),3)
+
+            for contour in contours[:top_n_objects_to_consider]:
                 x,y,w,h = cv2.boundingRect(contour)
                 if (((w * h) / self.image_pixels) * 100) > minimum_motion_screen_percent:
-                    logger.debug("%s had object at %d,%d:%d,%d", self.name, x,y,w,h)
-                    if motion[self.name].update( x, y, w, h) == True:
-                        cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
-                        logger.info("%s has motion detected", self.name)
-                    else:
-                        cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,255,0),3)
+                    logger.info("%s object at %d,%d:%d,%d", self.name, x,y,w,h)
+                    cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),5)
 
              # sleep within framerate for each camera (separate thread)
             time.sleep(1/fps/2)
@@ -109,29 +85,28 @@ def read_config(config_file):
 
 read_config(sys.argv[1]) 
 
+#camera config
 cameras = dict(config['cameras']) 
 	
+#motion config
+gaussian_kernel_size = int(config['motion']['gaussian_kernel_size'])
+pixel_delta_threshold = int(config['motion']['pixel_delta_threshold'])
+fps = int(config['motion']['fps'])
+minimum_motion_screen_percent = float(config['motion']['minimum_motion_screen_percent'])
+display_contour_debug = int(config['motion']['display_contour_debug'])
+top_n_objects_to_consider = int(config['motion']['top_n_objects_to_consider'])
+
+#general config
+masks_directory = config['general']['masks_directory']
 logfile = config['general']['logfile']
+my_log_level_from_config = config['general']['log_level']
 
 log_level_info = {  "DEBUG" : logging.DEBUG, 
                     "INFO": logging.INFO,
                     "WARNING": logging.WARNING,
                     "ERROR": logging.ERROR,
                     }
-
-my_log_level_from_config = config['general']['log_level']
 my_log_level = log_level_info[my_log_level_from_config]
-
-gaussian_kernel_size = int(config['motion']['gaussian_kernel_size'])
-pixel_delta_threshold = int(config['motion']['pixel_delta_threshold'])
-fps = int(config['motion']['fps'])
-minimum_motion_screen_percent = float(config['motion']['minimum_motion_screen_percent'])
-threshold  = float(config['motion']['threshold'])
-fade  = float(config['motion']['fade'])
-gain  = float(config['motion']['gain'])
-
-display_camera_windows = int(config['general']['display_camera_windows'])
-masks_directory = config['general']['masks_directory']
 
 
 logging.basicConfig(    handlers=[
@@ -147,17 +122,13 @@ logger.info("OpenCVCam started")
 
 streams = {}
 
-motion = {}
-
 for name,uri in cameras.items():
     streams[name] = VideoStreamWidget(name, uri, gaussian_kernel_size, pixel_delta_threshold, 
                                             fps, masks_directory, minimum_motion_screen_percent)
-    motion[name] = MotionVectorWeight(threshold, fade, gain)
-
 while True:
     for name,uri in cameras.items():
         try:
-            if display_camera_windows:
+            if display_contour_debug:
                 streams[name].show_frame()
         except AttributeError:
             pass
