@@ -7,11 +7,11 @@ drive = rtsp://192.168.1.14:554/user=admin&password=password&channel=1&stream=1.
 
 [motion]
 image_rescaling_factor = 1.0
-gaussian_kernel_size = 5
-pixel_delta_threshold = 20
-delta_frame_dilation = 5
+gaussian_kernel_size = 11
+pixel_delta_threshold = 25
+delta_frame_opening = 5
 fps = 10
-minimum_motion_screen_percent = 0.1
+minimum_motion_screen_percent = 0.25
 motion_contours_to_consider = 5
 display_contour_debug = 0
 

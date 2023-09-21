@@ -63,10 +63,8 @@ class VideoStreamWidget(object):
                 frameDelta = cv2.absdiff(self.last_frame, self.gray)
                 self.last_frame = self.gray
                 thresh = cv2.threshold(frameDelta, self.pixel_delta_threshold, 255, cv2.THRESH_BINARY)[1]
-                kernel = np.ones((delta_frame_dilation,delta_frame_dilation),np.uint8)
-                thresh = cv2.dilate(thresh, kernel, iterations = 1)
-                cv2.imshow("Debug", thresh)
-                cv2.waitKey(1)
+                kernel = np.ones((delta_frame_opening,delta_frame_opening),np.uint8)
+                thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
                 contours = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
                 contours = contours[0] if len(contours) == 2 else contours[1]
@@ -80,7 +78,7 @@ class VideoStreamWidget(object):
                 for contour in contours[:motion_contours_to_consider ]:
                     x,y,w,h = cv2.boundingRect(contour)
                     if (((w * h) / self.image_pixels) * 100) > minimum_motion_screen_percent:
-                        logger.info("%s : significant object at %d,%d:%d,%d", self.name, x,y,w,h)
+                        logger.info("%s : potentially significant object at %d,%d:%d,%d", self.name, x,y,w,h)
                         cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),5)
 
                 # sleep within framerate for each camera (separate thread)
@@ -112,7 +110,7 @@ cameras = dict(config['cameras'])
 image_rescaling_factor = float(config['motion']['image_rescaling_factor'])
 gaussian_kernel_size = int(config['motion']['gaussian_kernel_size'])
 pixel_delta_threshold = int(config['motion']['pixel_delta_threshold'])
-delta_frame_dilation = int(config['motion']['delta_frame_dilation']) 
+delta_frame_opening = int(config['motion']['delta_frame_opening']) 
 fps = int(config['motion']['fps'])
 minimum_motion_screen_percent = float(config['motion']['minimum_motion_screen_percent'])
 display_contour_debug = int(config['motion']['display_contour_debug'])
