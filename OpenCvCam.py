@@ -18,14 +18,17 @@ class VideoStreamWidget(object):
         self.gaussian_kernel_size = gaussian_kernel_size
         self.pixel_delta_threshold = pixel_delta_threshold
         self.name = name
-        self.capture = cv2.VideoCapture(uri)
-        self.thread = Thread(target=self.update, args=())
-        self.thread.daemon = True
-        self.thread.start()
+        self.image_rescaling_factor = image_rescaling_factor
+        
         self.last_frame = None
         self.gray = None
         self.mask = None
         self.image_pixels = None
+
+        self.capture = cv2.VideoCapture(uri)
+        self.thread = Thread(target=self.update, args=())
+        self.thread.daemon = True
+        self.thread.start()
 
     def update(self):
         while True:
@@ -33,7 +36,7 @@ class VideoStreamWidget(object):
                 (self.status, self.frame) = self.capture.read()
             
             if self.status:
-                if image_rescaling_factor != 1.0:
+                if self.image_rescaling_factor != 1.0:
                     self.frame = cv2.resize(self.frame, (0, 0), fx = image_rescaling_factor, fy = image_rescaling_factor, interpolation = cv2.INTER_LINEAR)
                 if self.last_frame is None:
                     self.last_frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
@@ -75,11 +78,29 @@ class VideoStreamWidget(object):
                         x,y,w,h = cv2.boundingRect(contour)
                         cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,255,255),3)
 
+                biggest_contour = None
+                combined_contour = None
                 for contour in contours[:motion_contours_to_consider ]:
-                    x,y,w,h = cv2.boundingRect(contour)
+                    x1,y1,w1,h1 = cv2.boundingRect(contour)
+                    if  biggest_contour == None:
+                        biggest_contour = [x1,y1,w1,h1]
+                    else:
+                        x2,y2,w2,h2 = biggest_contour
+                        if ((abs (((x2 + w2)/2) - ((x1 + w1)/2)) < contour_combine_distance) and (abs (((y2 + h2)/2) - ((y1 + h1)/2)) < contour_combine_distance)):
+                            if combined_contour == None:
+                                # no combined contour yet, keep separate from biggest_contour ! 
+                                combined_contour = [min(x2,x1),min(y2,y1),max(w2,w1),max(h2,h1)]
+                            else:
+                                x1,y1,w1,h1 = combined_contour
+                                combined_contour = [min(x2,x1),min(y2,y1),max(w2,w1),max(h2,h1)]
+                        else:
+                            # contours not overlappign within limits
+                            pass
+                if combined_contour != None:
+                    x,y,w,h = combined_contour
+                    cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
                     if (((w * h) / self.image_pixels) * 100) > minimum_motion_screen_percent:
-                        logger.info("%s : potentially significant object at %d,%d:%d,%d", self.name, x,y,w,h)
-                        cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),5)
+                        logger.info("%s : Potentially significant object at %d,%d:%d,%d", self.name, x,y,w,h)
 
                 # sleep within framerate for each camera (separate thread)
                 time.sleep(1/fps/2)
@@ -113,8 +134,9 @@ pixel_delta_threshold = int(config['motion']['pixel_delta_threshold'])
 delta_frame_opening = int(config['motion']['delta_frame_opening']) 
 fps = int(config['motion']['fps'])
 minimum_motion_screen_percent = float(config['motion']['minimum_motion_screen_percent'])
-display_contour_debug = int(config['motion']['display_contour_debug'])
 motion_contours_to_consider  = int(config['motion']['motion_contours_to_consider'])
+contour_combine_distance = int(config['motion']['contour_combine_distance'])
+display_contour_debug = int(config['motion']['display_contour_debug'])
 
 #general config
 masks_directory = config['general']['masks_directory']
