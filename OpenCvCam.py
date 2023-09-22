@@ -166,11 +166,18 @@ streams = {}
 for name,uri in cameras.items():
     streams[name] = VideoStreamWidget(name, uri, motion_config)
 while True:
+    start_time = time.time()
     for name,uri in cameras.items():
         try:
             if motion_config['display_contour_debug']:
                 streams[name].show_frame()
         except AttributeError:
             pass
-    # sleep within framerate over all cameras (single thread)
-    time.sleep(1/motion_config['fps']/2)
+    # sleep well within framerate over all cameras (single thread)
+    time.sleep(1/motion_config['fps']/4)
+    end_time = time.time()
+    delta_time = end_time - start_time
+    target_time = 1.0/float(motion_config['fps'])
+    if(delta_time > target_time):
+       logger.debug("Not real time: execution in %.3f not %.3f seconds", delta_time, target_time)
+    

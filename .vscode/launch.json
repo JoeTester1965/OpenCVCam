@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["C:/Users/derek/Desktop/config.txt"]
+            "args": ["/home/jetsondev/Desktop/config.txt"]
         }
     ]
 }
