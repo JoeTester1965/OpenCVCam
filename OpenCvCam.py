@@ -17,6 +17,7 @@ class VideoStreamWidget(object):
         self.gray = None
         self.mask = None
         self.image_pixels = None
+        self.status = None
 
         self.capture = cv2.VideoCapture(uri)
         self.thread = Thread(target=self.update, args=())
