@@ -7,6 +7,28 @@ import logging
 from threading import Thread
 import time
 import os
+import queue
+
+class TimeoutCheck:
+
+	def __init__(self, seconds_to_expire):
+		self._start_time = time.perf_counter()
+		self._seconds_to_expire = seconds_to_expire
+
+	def reset(self):
+		if self._start_time is None:
+			return None
+		self._start_time = time.perf_counter()
+
+	def expired(self):
+		if self._start_time is None:
+			return None
+		elapsed_time = time.perf_counter() - self._start_time
+		if elapsed_time > self._seconds_to_expire:
+			self._start_time = time.perf_counter()
+			return True
+		else:
+			return False
 
 class VideoStreamWidget(object):
     def __init__(self, name, uri, motion_config):
@@ -20,6 +42,7 @@ class VideoStreamWidget(object):
         self.status = None
 
         self.capture = cv2.VideoCapture(uri)
+        self.object_detection_timer = TimeoutCheck(self.motion_config['object_detection_timer'])
         self.thread = Thread(target=self.update, args=())
         self.thread.daemon = True
         self.thread.start()
@@ -98,7 +121,10 @@ class VideoStreamWidget(object):
                     cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
                     if (((w * h) / self.image_pixels) * 100) > self.motion_config['minimum_motion_screen_percent']:
                         logger.info("%s : Potentially significant object at %d,%d:%d,%d", self.name, x,y,w,h)
-
+                        
+                        if(self.object_detection_timer.expired()):
+                            #Put candidate in mnaged queue
+                            image_queues[self.name].put(self.frame)
                 # sleep within framerate for each camera (separate thread)
                 time.sleep(1/motion_config['fps']/2)
             else:
@@ -138,6 +164,10 @@ motion_config['motion_contours_to_consider']  = int(config['motion']['motion_con
 motion_config['contour_combine_distance'] = int(config['motion']['contour_combine_distance'])
 motion_config['display_contour_debug'] = int(config['motion']['display_contour_debug'])
 motion_config['masks_directory'] = config['motion']['masks_directory']
+motion_config['config'] = config['yolo']['config']
+motion_config['weights'] = config['yolo']['weights']
+motion_config['classes'] = config['yolo']['classes']
+motion_config['object_detection_timer'] = float(config['yolo']['object_detection_timer'])
 
 #general config
 logfile = config['general']['logfile']
@@ -164,8 +194,12 @@ logger.info("OpenCVCam started")
 
 streams = {}
 
+image_queues = {}
+
 for name,uri in cameras.items():
     streams[name] = VideoStreamWidget(name, uri, motion_config)
+    image_queues[name] = queue.Queue()
+
 while True:
     start_time = time.time()
     for name,uri in cameras.items():
@@ -174,11 +208,23 @@ while True:
                 streams[name].show_frame()
         except AttributeError:
             pass
+    
+    #
+    # THIS BELOW CAUSES IMAGE TO STOP DISPLAYING!!, YET TO ADD TIMER
+    ## NEED TO PUT IN ANOTHER THREAD !!
+    #    
+    for name,uri in cameras.items():    
+        try:
+            yolyo_candidate = image_queues[name].get(False)
+            logger.debug("%s : Yolo candidate being processed, outstanding queue size %d", name, image_queues[name].qsize())
+        except:
+            pass
+
     # sleep well within framerate over all cameras (single thread)
     time.sleep(1/motion_config['fps']/4)
     end_time = time.time()
     delta_time = end_time - start_time
     target_time = 1.0/float(motion_config['fps'])
     if(delta_time > target_time):
-       logger.debug("Not real time: execution in %.3f not %.3f seconds", delta_time, target_time)
+       logger.info("Not real time: execution in %.3f not %.3f seconds", delta_time, target_time)
     

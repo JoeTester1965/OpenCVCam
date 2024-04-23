@@ -4,6 +4,7 @@ side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&strea
 back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
 front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
 drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+#test = rtsp://admin:2540cdt@192.168.1.132:554
 
 [motion]
 
@@ -18,8 +19,14 @@ contour_combine_distance = 30
 display_contour_debug = 1
 masks_directory = C:/Users/derek/source/repos/VS Code/OpenCVCam/OpenCVCam/masks
 
+[yolo]
+config=yolo3.cfg
+weights=yolov3.weights
+classes=yolov3.txt
+object_detection_timer=1.0
+
 [general]
 
 # DEBUG,INFO,WARNING,ERROR
-log_level = INFO
-logfile = ./logfile.txt
+log_level = DEBUG
+logfile = C:/Users/derek/source/repos/VS Code/OpenCVCam/OpenCVCam/logfile.txt
