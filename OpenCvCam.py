@@ -8,6 +8,27 @@ from threading import Thread
 import time
 import os
 import queue
+import copy
+
+def get_output_layers(net):
+    
+    layer_names = net.getLayerNames()
+    try:
+        output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
+    except:
+        output_layers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+
+    return output_layers
+
+def draw_prediction(img, class_id, confidence, x, y, x_plus_w, y_plus_h):
+
+    label = str(classes[class_id])
+
+    color = COLORS[class_id]
+
+    cv2.rectangle(img, (x,y), (x_plus_w,y_plus_h), color, 2)
+
+    cv2.putText(img, label, (x-10,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
 class TimeoutCheck:
 
@@ -40,6 +61,7 @@ class VideoStreamWidget(object):
         self.mask = None
         self.image_pixels = None
         self.status = None
+        self.frame = None
 
         self.capture = cv2.VideoCapture(uri)
         self.object_detection_timer = TimeoutCheck(self.motion_config['object_detection_timer'])
@@ -95,7 +117,8 @@ class VideoStreamWidget(object):
                 if self.motion_config['display_contour_debug']:
                     for contour in contours:
                         x,y,w,h = cv2.boundingRect(contour)
-                        cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,255,255),3)
+                        # Colour contours grey
+                        cv2.rectangle(self.frame,(x,y),(x+w,y+h),(125,125,125),3)
 
                 biggest_contour = None
                 combined_contour = None
@@ -118,10 +141,12 @@ class VideoStreamWidget(object):
                             pass
                 if combined_contour != None:
                     x,y,w,h = combined_contour
-                    cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
+                    # colour combined countours blue
+                    cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,0,0),3)
                     if (((w * h) / self.image_pixels) * 100) > self.motion_config['minimum_motion_screen_percent']:
                         logger.info("%s : Potentially significant object at %d,%d:%d,%d", self.name, x,y,w,h)
-                        
+                        # colour significant contours red
+                        cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
                         if(self.object_detection_timer.expired()):
                             #Put candidate in mnaged queue
                             image_queues[self.name].put(self.frame)
@@ -192,6 +217,17 @@ logger = logging.getLogger(__name__)
 
 logger.info("OpenCVCam started")
 
+classes = None
+
+with open(motion_config['classes'], 'r') as f:
+    classes = [line.strip() for line in f.readlines()]
+
+COLORS = np.random.uniform(0, 255, size=(len(classes), 3))
+
+net = cv2.dnn.readNet(motion_config['weights'], motion_config['config'])
+
+logger.info("DNN started")
+
 streams = {}
 
 image_queues = {}
@@ -199,6 +235,7 @@ image_queues = {}
 for name,uri in cameras.items():
     streams[name] = VideoStreamWidget(name, uri, motion_config)
     image_queues[name] = queue.Queue()
+
 
 while True:
     start_time = time.time()
@@ -208,17 +245,59 @@ while True:
                 streams[name].show_frame()
         except AttributeError:
             pass
-    
-    #
-    # THIS BELOW CAUSES IMAGE TO STOP DISPLAYING!!, YET TO ADD TIMER
-    ## NEED TO PUT IN ANOTHER THREAD !!
-    #    
+       
     for name,uri in cameras.items():    
-        try:
-            yolyo_candidate = image_queues[name].get(False)
-            logger.debug("%s : Yolo candidate being processed, outstanding queue size %d", name, image_queues[name].qsize())
-        except:
-            pass
+        if image_queues[name].qsize() > 0:
+                Width,Height = streams[name].last_frame.shape
+                yolyo_candidate = image_queues[name].get(False)
+                logger.debug("%s : Yolo candidate being processed, outstanding queue size %d", name, image_queues[name].qsize())
+                blob = cv2.dnn.blobFromImage(yolyo_candidate, 1/255, (416,416), (0,0,0), True, crop=False)
+                net.setInput(blob)
+                outs = net.forward(get_output_layers(net))
+                class_ids = []
+                confidences = []
+                boxes = []
+                conf_threshold = 0.1 # was 0.5
+                nms_threshold = 0.4
+                #
+                # Neeed to scale below base on Width,Height -> 416,416 !!
+                #
+                for out in outs:
+                    for detection in out:
+                        scores = detection[5:]
+                        class_id = np.argmax(scores)
+                        confidence = scores[class_id]
+                        if confidence > 0.1: # was 0.5
+                            center_x = int(detection[0] * Width)
+                            center_y = int(detection[1] * Height)
+                            w = int(detection[2] * Width)
+                            h = int(detection[3] * Height)
+                            x = center_x - w / 2
+                            y = center_y - h / 2
+                            class_ids.append(class_id)
+                            confidences.append(float(confidence))
+                            boxes.append([x, y, w, h])
+
+
+                indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
+
+                prediction = copy.copy(streams[name].frame)
+
+                for i in indices:
+                    try:
+                        box = boxes[i]
+                    except:
+                        i = i[0]
+                        box = boxes[i]
+                    
+                    x = box[0]
+                    y = box[1]
+                    w = box[2]
+                    h = box[3]
+                    draw_prediction(prediction, class_ids[i], confidences[i], round(x), round(y), round(x+w), round(y+h))
+
+                cv2.imshow("objet detection", prediction)
+                cv2.waitKey(1)
 
     # sleep well within framerate over all cameras (single thread)
     time.sleep(1/motion_config['fps']/4)
