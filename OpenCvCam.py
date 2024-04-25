@@ -176,9 +176,7 @@ read_config(sys.argv[1])
 cameras = dict(config['cameras']) 
 	
 #motion config
-
 motion_config={}
-
 motion_config['image_rescaling_factor'] = float(config['motion']['image_rescaling_factor'])
 motion_config['gaussian_kernel_size'] = int(config['motion']['gaussian_kernel_size'])
 motion_config['pixel_delta_threshold'] = int(config['motion']['pixel_delta_threshold'])
@@ -189,10 +187,15 @@ motion_config['motion_contours_to_consider']  = int(config['motion']['motion_con
 motion_config['contour_combine_distance'] = int(config['motion']['contour_combine_distance'])
 motion_config['display_contour_debug'] = int(config['motion']['display_contour_debug'])
 motion_config['masks_directory'] = config['motion']['masks_directory']
-motion_config['config'] = config['yolo']['config']
-motion_config['weights'] = config['yolo']['weights']
-motion_config['classes'] = config['yolo']['classes']
-motion_config['object_detection_timer'] = float(config['yolo']['object_detection_timer'])
+motion_config['object_detection_timer'] = float(config['motion']['object_detection_timer'])
+
+#dnn_config
+dnn_config={}
+dnn_config['config'] = config['yolo']['config']
+dnn_config['weights'] = config['yolo']['weights']
+dnn_config['classes'] = config['yolo']['classes']
+dnn_config['dnn_width'] = int(config['yolo']['dnn_width'])
+dnn_config['dnn_height'] = int(config['yolo']['dnn_height'])
 
 #general config
 logfile = config['general']['logfile']
@@ -219,12 +222,12 @@ logger.info("OpenCVCam started")
 
 classes = None
 
-with open(motion_config['classes'], 'r') as f:
+with open(dnn_config['classes'], 'r') as f:
     classes = [line.strip() for line in f.readlines()]
 
 COLORS = np.random.uniform(0, 255, size=(len(classes), 3))
 
-net = cv2.dnn.readNet(motion_config['weights'], motion_config['config'])
+net = cv2.dnn.readNet(dnn_config['weights'], dnn_config['config'])
 
 logger.info("DNN started")
 
@@ -259,9 +262,9 @@ while True:
                 boxes = []
                 conf_threshold = 0.1 # was 0.5
                 nms_threshold = 0.4
-                #
-                # Neeed to scale below base on Width,Height -> 416,416 !!
-                #
+                Width = dnn_config['dnn_width'] 
+                Height = dnn_config['dnn_height'] 
+
                 for out in outs:
                     for detection in out:
                         scores = detection[5:]
@@ -282,6 +285,7 @@ while True:
                 indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
 
                 prediction = copy.copy(streams[name].frame)
+                prediction = cv2.resize(prediction, (Width, Height), interpolation= cv2.INTER_LINEAR)
 
                 for i in indices:
                     try:

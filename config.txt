@@ -1,11 +1,11 @@
 [cameras]
 
-side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+#side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+#back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+#front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+#drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
 #test_cam = rtsp://admin:2540cdt@192.168.1.132:554
-#test_video = file:C:\Users\derek\Desktop\test.m4v
+test_video = file:C:\Users\derek\Desktop\test.m4v
 
 [motion]
 
@@ -17,17 +17,20 @@ fps = 10
 minimum_motion_screen_percent = 0.25
 motion_contours_to_consider = 10
 contour_combine_distance = 50
-display_contour_debug = 1 # grey - contours, blue - combined contours, red - significant contours 
+# grey - contours, blue - combined contours, red - significant contours 
+display_contour_debug = 1
 masks_directory = C:/Users/derek/source/repos/VS Code/OpenCVCam/OpenCVCam/masks
+object_detection_timer=1.0
 
 [yolo]
-config=yolo3.cfg
-weights=yolov3.weights
-classes=yolov3.txt
-object_detection_timer=1.0
+config=OpenCVCam/yolo3.cfg
+weights=OpenCVCam/yolov3.weights
+classes=OpenCVCam/yolov3.txt
+dnn_width=416
+dnn_height=416
 
 [general]
 
 # DEBUG,INFO,WARNING,ERROR
 log_level = DEBUG
-logfile = C:/Users/derek/source/repos/VS Code/OpenCVCam/OpenCVCam/logfile.txt
+logfile = logfile.txt
