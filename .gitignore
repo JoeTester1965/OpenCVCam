@@ -2,3 +2,4 @@ logfile.txt
 config.txt
 myenv/
 masks/
+yolov3.weights

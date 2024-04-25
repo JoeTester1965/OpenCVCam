@@ -142,11 +142,13 @@ class VideoStreamWidget(object):
                 if combined_contour != None:
                     x,y,w,h = combined_contour
                     # colour combined countours blue
-                    cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,0,0),3)
+                    if self.motion_config['display_contour_debug']:
+                        cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,0,0),3)
                     if (((w * h) / self.image_pixels) * 100) > self.motion_config['minimum_motion_screen_percent']:
                         logger.info("%s : Potentially significant object at %d,%d:%d,%d", self.name, x,y,w,h)
                         # colour significant contours red
-                        cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
+                        if self.motion_config['display_potentially_significant_object_debug']:
+                            cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
                         if(self.object_detection_timer.expired()):
                             #Put candidate in mnaged queue
                             image_queues[self.name].put(self.frame)
@@ -186,6 +188,7 @@ motion_config['minimum_motion_screen_percent'] = float(config['motion']['minimum
 motion_config['motion_contours_to_consider']  = int(config['motion']['motion_contours_to_consider'])
 motion_config['contour_combine_distance'] = int(config['motion']['contour_combine_distance'])
 motion_config['display_contour_debug'] = int(config['motion']['display_contour_debug'])
+motion_config['display_potentially_significant_object_debug'] = int(config['motion']['display_potentially_significant_object_debug'])
 motion_config['masks_directory'] = config['motion']['masks_directory']
 motion_config['object_detection_timer'] = float(config['motion']['object_detection_timer'])
 
@@ -196,6 +199,9 @@ dnn_config['weights'] = config['yolo']['weights']
 dnn_config['classes'] = config['yolo']['classes']
 dnn_config['dnn_width'] = int(config['yolo']['dnn_width'])
 dnn_config['dnn_height'] = int(config['yolo']['dnn_height'])
+dnn_config['dnn_confidence'] = float(config['yolo']['dnn_confidence'])
+dnn_config['bounding_box_score_threshold'] = float(config['yolo']['bounding_box_score_threshold'])
+dnn_config['bounding_box_nms_threshold'] = float(config['yolo']['bounding_box_nms_threshold'])
 
 #general config
 logfile = config['general']['logfile']
@@ -244,7 +250,7 @@ while True:
     start_time = time.time()
     for name,uri in cameras.items():
         try:
-            if motion_config['display_contour_debug']:
+            if motion_config['display_contour_debug'] or motion_config['display_potentially_significant_object_debug']:
                 streams[name].show_frame()
         except AttributeError:
             pass
@@ -260,8 +266,6 @@ while True:
                 class_ids = []
                 confidences = []
                 boxes = []
-                conf_threshold = 0.1 # was 0.5
-                nms_threshold = 0.4
                 Width = dnn_config['dnn_width'] 
                 Height = dnn_config['dnn_height'] 
 
@@ -270,7 +274,7 @@ while True:
                         scores = detection[5:]
                         class_id = np.argmax(scores)
                         confidence = scores[class_id]
-                        if confidence > 0.1: # was 0.5
+                        if confidence > dnn_config['dnn_confidence']:
                             center_x = int(detection[0] * Width)
                             center_y = int(detection[1] * Height)
                             w = int(detection[2] * Width)
@@ -282,7 +286,7 @@ while True:
                             boxes.append([x, y, w, h])
 
 
-                indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
+                indices = cv2.dnn.NMSBoxes(boxes, confidences, dnn_config['bounding_box_score_threshold'], dnn_config['bounding_box_nms_threshold'])
 
                 prediction = copy.copy(streams[name].frame)
                 prediction = cv2.resize(prediction, (Width, Height), interpolation= cv2.INTER_LINEAR)
