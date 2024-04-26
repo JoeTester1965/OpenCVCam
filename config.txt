@@ -19,23 +19,26 @@ motion_contours_to_consider = 10
 contour_combine_distance = 50
 # grey - contours, blue - combined contours, red - significant contours 
 display_contour_debug = 0
-display_potentially_significant_object_debug = 1
+display_potentially_significant_object_debug = 0
 masks_directory = C:/Users/derek/source/repos/VS Code/OpenCVCam/OpenCVCam/masks
 object_detection_timer=1.0
 
-[yolo]
+[dnn]
 config=OpenCVCam/yolo3.cfg
 weights=OpenCVCam/yolov3.weights
 classes=OpenCVCam/yolov3.txt
 dnn_width=416
 dnn_height=416
-dnn_confidence=0.25
+dnn_confidence=0.5
 bounding_box_score_threshold = 0.5
 bounding_box_nms_threshold = 0.4
-
+display_DNN_object_detect_debug = 1
 
 [general]
 
 # DEBUG,INFO,WARNING,ERROR
-log_level = DEBUG
+log_level = INFO
 logfile = logfile.txt
+display_raw_video = 1
+blacklist=toilet,tv
+whitelist=person,bird,cat,dog
