@@ -150,7 +150,7 @@ class VideoStreamWidget(object):
                             logger.debug("%s : Potentially significant object at %d,%d:%d,%d", self.name, x,y,w,h)
                             # colour significant contours red
                             if int(self.motion_config['display_potentially_significant_object_debug']):
-                                cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
+                                cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,255,255),3)
                             if(self.object_detection_timer.expired()):
                                 #Put candidate in mnaged queue
                                 image_queues[self.name].put(self.frame)
@@ -229,7 +229,7 @@ def process_events(yolyo_candidate, camera_stream, camera_name):
                     h = box[3] * y_scale
                     
                     label = str(classes[class_id])
-                    color = COLORS[class_id]
+                    color = (0,0,255)
                     cv2.rectangle(yolyo_candidate, (round(x),round(y)), (round(x+w),round(y+h)), color, 2)
                     cv2.putText(yolyo_candidate, label, (round(x)-10,round(y)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
                     logger.info("%s : Detected %s at %d,%d", camera_name, label, (x + (x+w))/2, (y + (y+h))/2)
@@ -282,8 +282,6 @@ classes = None
 
 with open(dnn_config['classes'], 'r') as f:
     classes = [line.strip() for line in f.readlines()]
-
-COLORS = np.random.uniform(0, 255, size=(len(classes), 3))
 
 net = cv2.dnn.readNet(dnn_config['weights'], dnn_config['config'])
 
