@@ -52,9 +52,15 @@ class VideoStreamWidget(object):
         self.image_pixels = None
         self.status = None
         self.frame = None
+        self.uri=uri
+        
+        self.camera_reconnect_timer = TimeoutCheck(float(cameras['camera_reconnect_timer']))
 
         self.capture = cv2.VideoCapture(uri)
-        self.object_detection_timer = TimeoutCheck(self.motion_config['object_detection_timer'])
+        if not self.capture.isOpened():
+            logger.info("%s : Not up yet up", name)
+
+        self.object_detection_timer = TimeoutCheck(float(motion_config['object_detection_timer']))
         self.thread = Thread(target=self.update, args=())
         self.thread.daemon = True
         self.thread.start()
@@ -63,14 +69,19 @@ class VideoStreamWidget(object):
         while True:
             if self.capture.isOpened():
                 (self.status, self.frame) = self.capture.read()
+            else:
+                if(self.camera_reconnect_timer.expired()):
+                    self.capture = cv2.VideoCapture(self.uri)
+                    if not self.capture.isOpened():
+                        logger.info("%s : Not up yet, addd timeout in update to reconnect", self.name) 
             
             if self.status:
-                if self.motion_config['image_rescaling_factor'] != 1.0:
+                if float(self.motion_config['image_rescaling_factor']) != 1.0:
                     self.frame = cv2.resize(self.frame, (0, 0), 
-                        fx = motion_config['image_rescaling_factor'], fy = self.motion_config['image_rescaling_factor'], interpolation = cv2.INTER_LINEAR)
+                        fx = float(motion_config['image_rescaling_factor']), fy = float(self.motion_config['image_rescaling_factor']), interpolation = cv2.INTER_LINEAR)
                 if self.last_frame is None:
                     self.last_frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
-                    self.last_frame = cv2.GaussianBlur(self.last_frame, (self.motion_config['gaussian_kernel_size'],self.motion_config['gaussian_kernel_size']), 0)
+                    self.last_frame = cv2.GaussianBlur(self.last_frame, (int(self.motion_config['gaussian_kernel_size']),int(self.motion_config['gaussian_kernel_size'])), 0)
                     width,height = self.last_frame.shape
                     self.image_pixels = width * height
                     masks_directory = self.motion_config['masks_directory']
@@ -94,18 +105,18 @@ class VideoStreamWidget(object):
                     if self.mask is not None:
                         self.gray = cv2.bitwise_and(self.gray,self.mask)
 
-                    self.gray = cv2.GaussianBlur(self.gray, (self.motion_config['gaussian_kernel_size'],self.motion_config['gaussian_kernel_size']), 0)
+                    self.gray = cv2.GaussianBlur(self.gray, (int(self.motion_config['gaussian_kernel_size']),int(self.motion_config['gaussian_kernel_size'])), 0)
                     frameDelta = cv2.absdiff(self.last_frame, self.gray)
                     self.last_frame = self.gray
-                    thresh = cv2.threshold(frameDelta, self.motion_config['pixel_delta_threshold'], 255, cv2.THRESH_BINARY)[1]
-                    kernel = np.ones((self.motion_config['delta_frame_opening'],self.motion_config['delta_frame_opening']),np.uint8)
+                    thresh = cv2.threshold(frameDelta, int(self.motion_config['pixel_delta_threshold']), 255, cv2.THRESH_BINARY)[1]
+                    kernel = np.ones((int(self.motion_config['delta_frame_opening']),int(self.motion_config['delta_frame_opening'])),np.uint8)
                     thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
                     contours = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
                     contours = contours[0] if len(contours) == 2 else contours[1]
                     contours = sorted(contours, key=cv2.contourArea, reverse=True)
 
-                    if self.motion_config['display_contour_debug']:
+                    if int(self.motion_config['display_contour_debug']):
                         for contour in contours:
                             x,y,w,h = cv2.boundingRect(contour)
                             # Colour contours grey
@@ -113,14 +124,14 @@ class VideoStreamWidget(object):
 
                     biggest_contour = None
                     combined_contour = None
-                    for contour in contours[:self.motion_config['motion_contours_to_consider'] ]:
+                    for contour in contours[:int(self.motion_config['motion_contours_to_consider']) ]:
                         x1,y1,w1,h1 = cv2.boundingRect(contour)
                         if  biggest_contour == None:
                             biggest_contour = [x1,y1,w1,h1]
                         else:
                             x2,y2,w2,h2 = biggest_contour
-                            if ((abs (((x2 + w2)/2) - ((x1 + w1)/2)) < self.motion_config['contour_combine_distance']) 
-                                and (abs (((y2 + h2)/2) - ((y1 + h1)/2)) < self.motion_config['contour_combine_distance'])):
+                            if ((abs (((x2 + w2)/2) - ((x1 + w1)/2)) < int(self.motion_config['contour_combine_distance'])) 
+                                and (abs (((y2 + h2)/2) - ((y1 + h1)/2)) < int(self.motion_config['contour_combine_distance']))):
                                 if combined_contour == None:
                                     # no combined contour yet, keep separate from biggest_contour ! 
                                     combined_contour = [min(x2,x1),min(y2,y1),max(w2,w1),max(h2,h1)]
@@ -133,23 +144,24 @@ class VideoStreamWidget(object):
                     if combined_contour != None:
                         x,y,w,h = combined_contour
                         # colour combined countours blue
-                        if self.motion_config['display_contour_debug']:
+                        if int(self.motion_config['display_contour_debug']):
                             cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,0,0),3)
-                        if (((w * h) / self.image_pixels) * 100) > self.motion_config['minimum_motion_screen_percent']:
+                        if (((w * h) / self.image_pixels) * 100) > float(self.motion_config['minimum_motion_screen_percent']):
                             logger.debug("%s : Potentially significant object at %d,%d:%d,%d", self.name, x,y,w,h)
                             # colour significant contours red
-                            if self.motion_config['display_potentially_significant_object_debug']:
+                            if int(self.motion_config['display_potentially_significant_object_debug']):
                                 cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
                             if(self.object_detection_timer.expired()):
                                 #Put candidate in mnaged queue
                                 image_queues[self.name].put(self.frame)
-                    # sleep within framerate for each camera (separate thread)
-                    time.sleep(1/motion_config['fps']/2)
             else:
                 #
                 # Camera down !
                 #
                 pass
+            
+            # sleep within framerate for each camera (separate thread)
+            time.sleep(1/float(motion_config['fps'])/float(general_config['sleep_ratio']))
     
     def show_frame(self):
         try:
@@ -167,8 +179,8 @@ def process_events(yolyo_candidate, camera_stream, camera_name):
     class_ids = []
     confidences = []
     boxes = []
-    DNNWidth = dnn_config['dnn_width'] 
-    DNNHeight = dnn_config['dnn_height'] 
+    DNNWidth = int(dnn_config['dnn_width']) 
+    DNNHeight = int(dnn_config['dnn_height']) 
     blob = cv2.dnn.blobFromImage(yolyo_candidate, 1/255, (416,416), (0,0,0), True, crop=False)
     net.setInput(blob)
     outs = net.forward(get_output_layers(net))
@@ -187,7 +199,7 @@ def process_events(yolyo_candidate, camera_stream, camera_name):
             scores = detection[5:]
             class_id = np.argmax(scores)
             confidence = scores[class_id]
-            if confidence > dnn_config['dnn_confidence']:
+            if confidence > float(dnn_config['dnn_confidence']):
                 #
                 have_best_detection = True
                 #
@@ -200,7 +212,7 @@ def process_events(yolyo_candidate, camera_stream, camera_name):
                 class_ids.append(class_id)
                 confidences.append(float(confidence))
                 boxes.append([x, y, w, h])
-                indices = cv2.dnn.NMSBoxes(boxes, confidences, dnn_config['bounding_box_score_threshold'], dnn_config['bounding_box_nms_threshold'])
+                indices = cv2.dnn.NMSBoxes(boxes, confidences, float(dnn_config['bounding_box_score_threshold']), float(dnn_config['bounding_box_nms_threshold']))
 
                 for i in indices:
                     try:
@@ -223,7 +235,7 @@ def process_events(yolyo_candidate, camera_stream, camera_name):
                     logger.info("%s : Detected %s at %d,%d", camera_name, label, (x + (x+w))/2, (y + (y+h))/2)
 
     if have_best_detection:
-        if dnn_config['display_DNN_object_detect_debug']:
+        if int(dnn_config['display_object_detect_debug']):
             cv2.imshow("DNN object detection", yolyo_candidate)
             cv2.waitKey(1)
 
@@ -238,44 +250,22 @@ read_config(sys.argv[1])
 cameras = dict(config['cameras']) 
 	
 #motion config
-motion_config={}
-motion_config['image_rescaling_factor'] = float(config['motion']['image_rescaling_factor'])
-motion_config['gaussian_kernel_size'] = int(config['motion']['gaussian_kernel_size'])
-motion_config['pixel_delta_threshold'] = int(config['motion']['pixel_delta_threshold'])
-motion_config['delta_frame_opening'] = int(config['motion']['delta_frame_opening']) 
-motion_config['fps'] = int(config['motion']['fps'])
-motion_config['minimum_motion_screen_percent'] = float(config['motion']['minimum_motion_screen_percent'])
-motion_config['motion_contours_to_consider']  = int(config['motion']['motion_contours_to_consider'])
-motion_config['contour_combine_distance'] = int(config['motion']['contour_combine_distance'])
-motion_config['display_contour_debug'] = int(config['motion']['display_contour_debug'])
-motion_config['display_potentially_significant_object_debug'] = int(config['motion']['display_potentially_significant_object_debug'])
-motion_config['masks_directory'] = config['motion']['masks_directory']
-motion_config['object_detection_timer'] = float(config['motion']['object_detection_timer'])
+motion_config=dict(config['motion']) 
 
 #dnn_config
-dnn_config={}
-dnn_config['config'] = config['dnn']['config']
-dnn_config['weights'] = config['dnn']['weights']
-dnn_config['classes'] = config['dnn']['classes']
-dnn_config['dnn_width'] = int(config['dnn']['dnn_width'])
-dnn_config['dnn_height'] = int(config['dnn']['dnn_height'])
-dnn_config['dnn_confidence'] = float(config['dnn']['dnn_confidence'])
-dnn_config['bounding_box_score_threshold'] = float(config['dnn']['bounding_box_score_threshold'])
-dnn_config['bounding_box_nms_threshold'] = float(config['dnn']['bounding_box_nms_threshold'])
-dnn_config['display_DNN_object_detect_debug'] = float(config['dnn']['display_DNN_object_detect_debug'])
+dnn_config=dict(config['dnn']) 
 
 #general config
-logfile = config['general']['logfile']
-my_log_level_from_config = config['general']['log_level']
+general_config=dict(config['general']) 
 
+logfile = general_config['logfile']
+my_log_level_from_config = general_config['log_level']
 log_level_info = {  "DEBUG" : logging.DEBUG, 
                     "INFO": logging.INFO,
                     "WARNING": logging.WARNING,
                     "ERROR": logging.ERROR,
                     }
 my_log_level = log_level_info[my_log_level_from_config]
-
-display_raw_video = int(config['general']['display_raw_video'])
 
 logging.basicConfig(    handlers=[
 								logging.FileHandler(logfile),
@@ -312,7 +302,7 @@ while True:
     start_time = time.time()
     for name,uri in cameras.items():
         try:
-            if motion_config['display_contour_debug'] or motion_config['display_potentially_significant_object_debug'] or display_raw_video :
+            if int(motion_config['display_contour_debug']) or int(motion_config['display_potentially_significant_object_debug']) or int(general_config['display_raw_video']) :
                 streams[name].show_frame()
         except AttributeError:
             pass
@@ -322,7 +312,7 @@ while True:
             process_events(image_queues[name].get(False), streams[name], name)
                 
     # sleep well within framerate over all cameras (single thread)
-    time.sleep(1/motion_config['fps']/4)
+    time.sleep(1/float(motion_config['fps'])/float(general_config['sleep_ratio']))
     end_time = time.time()
     delta_time = end_time - start_time
     target_time = 1.0/float(motion_config['fps'])

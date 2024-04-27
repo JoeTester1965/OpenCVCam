@@ -5,7 +5,9 @@
 #front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
 #drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
 #test_cam = rtsp://admin:2540cdt@192.168.1.132:554
-test_video = file:C:\Users\derek\Desktop\test.m4v
+test_video = file:C:/Users/derek/source/repos/VS_Code/OpenCVCam/test.m4v
+
+camera_reconnect_timer=5
 
 [motion]
 
@@ -20,7 +22,7 @@ contour_combine_distance = 50
 # grey - contours, blue - combined contours, red - significant contours 
 display_contour_debug = 0
 display_potentially_significant_object_debug = 0
-masks_directory = C:/Users/derek/source/repos/VS Code/OpenCVCam/OpenCVCam/masks
+masks_directory = C:/Users/derek/source/repos/VS_Code/OpenCVCam/OpenCVCam/masks
 object_detection_timer=1.0
 
 [dnn]
@@ -32,7 +34,7 @@ dnn_height=416
 dnn_confidence=0.5
 bounding_box_score_threshold = 0.5
 bounding_box_nms_threshold = 0.4
-display_DNN_object_detect_debug = 1
+display_object_detect_debug = 1
 
 [general]
 
@@ -40,5 +42,6 @@ display_DNN_object_detect_debug = 1
 log_level = INFO
 logfile = logfile.txt
 display_raw_video = 1
+sleep_ratio = 10
 blacklist=toilet,tv
 whitelist=person,bird,cat,dog
