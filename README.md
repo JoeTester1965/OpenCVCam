@@ -11,6 +11,8 @@ Tested on Debian 1:6.12.34-1+rpt1~bookworm (2025-06-26) aarch64 GNU/Linux
 sudo apt-get update 
 sudo apt-get upgrade
 sudo apt-get install 
+
+ADD Hailo install
 ```
 
 
