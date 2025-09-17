@@ -19,16 +19,15 @@ fps = 10
 minimum_motion_screen_percent = 0.25
 motion_contours_to_consider = 10
 contour_combine_distance = 50
-# grey - contours, blue - combined contours, red - significant contours 
 display_contour_debug = 0
 display_potentially_significant_object_debug = 0
 masks_directory = C:/Users/derek/source/repos/VS_Code/OpenCVCam/OpenCVCam/masks
-object_detection_timer=1.0
+object_detection_timer = 0.2
 
 [dnn]
-config=OpenCVCam/yolo3.cfg
-weights=OpenCVCam/yolov3.weights
-classes=OpenCVCam/yolov3.txt
+config=yolo3.cfg
+weights=yolov3.weights
+classes=yolov3.txt
 dnn_width=416
 dnn_height=416
 dnn_confidence=0.5
@@ -41,7 +40,7 @@ display_object_detect_debug = 1
 # DEBUG,INFO,WARNING,ERROR
 log_level = INFO
 logfile = logfile.txt
-display_raw_video = 1
+display_raw_video = 0
 sleep_ratio = 10
 blacklist=toilet,tv
 whitelist=person,bird,cat,dog
