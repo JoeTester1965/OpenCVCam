@@ -3,7 +3,7 @@
 # DEBUG,INFO,WARNING,ERROR
 log_level = INFO
 logfile = logfile.txt
-display_raw_video = 1
+display_raw_video = 0
 sleep_ratio = 10
 blacklist=toilet,tv
 whitelist=person,bird,cat,dog
@@ -16,7 +16,7 @@ ipc_ip = 127.0.0.1
 #back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
 #front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
 #drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-test_video = file:C:/Users/derek/source/repos/VS_Code/OpenCVCam/test.m4v
+test_video = file:/home/pi/Documents/test.m4v
 
 [motion]
 
@@ -28,11 +28,11 @@ fps = 10
 minimum_motion_screen_percent = 0.25
 motion_contours_to_consider = 10
 contour_combine_distance = 50
-display_contour_debug = 1
-display_potentially_significant_object_debug = 1
-masks_directory = C:/Users/derek/source/repos/VS_Code/OpenCVCam/OpenCVCam/masks
+display_contour_debug = 0
+display_potentially_significant_object_debug = 0
+masks_directory = /home/pi/Documents/OpenCVCam/masks
 object_detection_timer = 0.2
-temp_motion_directory = C:/Users/derek/source/repos/VS_Code/OpenCVCam/OpenCVCam/temp_motion
+temp_motion_directory = /home/pi/Documents/OpenCVCam/temp_motion
 
 [inference]
 config=yolo3.cfg
