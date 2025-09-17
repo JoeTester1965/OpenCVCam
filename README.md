@@ -13,7 +13,13 @@ sudo apt-get upgrade
 sudo apt-get install 
 
 ADD Hailo install
+
+python -m pip install grpcio
+python -m pip install grpcio-tools
+
 ```
+
+
 
 
 # Configuration file

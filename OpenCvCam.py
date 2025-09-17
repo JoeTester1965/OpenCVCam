@@ -7,6 +7,7 @@ import logging
 from threading import Thread
 import time
 import os
+import socket
 
 class TimeoutCheck:
 
@@ -130,10 +131,13 @@ class VideoStreamWidget(object):
                             if int(self.motion_config['display_potentially_significant_object_debug']):
                                 cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,255,255),3)
                             if(self.object_detection_timer.expired()):
-                                #
-                                # ToDo put candidate in filesystem queue
-                                # 
+                                # IPC event for accelerated object detection
                                 logger.info("%s : Significant object at %d,%d:%d,%d", self.name, x,y,w,h)
+                                filename = motion_config['temp_motion_directory'] + "/" + self.name + ".jpg"
+                                cv2.imwrite(filename, self.frame)
+                                ipc_message = self.name + "," + str(x) + "," + str(y) + "," + str(w) + "," + str(h)
+                                ipc_socket.sendto(bytes(ipc_message, "utf-8"), (ipc_ip, int(ipc_port)))
+                                pass
 
             time.sleep(1/float(motion_config['fps'])/float(general_config['sleep_ratio']))
     
@@ -151,13 +155,10 @@ def read_config(config_file):
 
 read_config(sys.argv[1]) 
 
-#camera config
 cameras = dict(config['cameras']) 
 	
-#motion config
 motion_config=dict(config['motion']) 
 
-#general config
 general_config=dict(config['general']) 
 
 logfile = general_config['logfile']
@@ -185,6 +186,11 @@ classes = None
 logger.debug("DNN started")
 
 streams = {}
+
+ipc_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+ipc_port = int(general_config['ipc_port'])
+ipc_ip = general_config['ipc_ip']
 
 for name,uri in cameras.items():
     streams[name] = VideoStreamWidget(name, uri, motion_config)
