@@ -13,6 +13,8 @@ read_config(sys.argv[1])
 
 general_config=dict(config['general']) 
 
+motion_config=dict(config['motion']) 
+
 inference_config=dict(config['inference']) 
 
 logfile = general_config['logfile']
@@ -45,7 +47,14 @@ ipc_socket.bind((ipc_ip, ipc_port))
 while True:
     data, addr = ipc_socket.recvfrom(1024)
     data_string = data.decode('utf-8')
-    logger.info("Recieved data_string %s from %s:%d", data_string, addr[0], addr[1])
+    logger.debug("Recieved data_string %s from %s:%d", data_string, addr[0], addr[1])
+    try:
+        filename,x,y,width,height = data_string.split(',')
+        path = motion_config['temp_motion_directory'] + "/" + filename + ".jpg"
+        pass
+    except:
+        logger.warning("Invalid data string")
+
     time.sleep(.001)
 
 
