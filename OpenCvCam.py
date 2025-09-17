@@ -74,7 +74,7 @@ class VideoStreamWidget(object):
                             #video size has changed, cannot use current mask
                             self.mask = None
                     else:
-                        #save new candidate template mask                 
+                        #save new candidate template mask              
                         candidate_mask_template_name = f'{masks_directory}/{self.name}-mask.candidate.jpg'
                         cv2.imwrite(candidate_mask_template_name, self.frame)
                 else:    
@@ -137,7 +137,6 @@ class VideoStreamWidget(object):
                                 cv2.imwrite(filename, self.frame)
                                 ipc_message = self.name + "," + str(x) + "," + str(y) + "," + str(w) + "," + str(h)
                                 ipc_socket.sendto(bytes(ipc_message, "utf-8"), (ipc_ip, int(ipc_port)))
-                                pass
 
             time.sleep(1/float(motion_config['fps'])/float(general_config['sleep_ratio']))
     
