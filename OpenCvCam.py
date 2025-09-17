@@ -41,12 +41,8 @@ class VideoStreamWidget(object):
         self.status = None
         self.frame = None
         self.uri=uri
-        
-        self.camera_reconnect_timer = TimeoutCheck(float(cameras['camera_reconnect_timer']))
 
         self.capture = cv2.VideoCapture(uri)
-        if not self.capture.isOpened():
-            logger.info("%s : Not up yet up", name)
 
         self.object_detection_timer = TimeoutCheck(float(motion_config['object_detection_timer']))
         self.thread = Thread(target=self.update, args=())
@@ -55,13 +51,7 @@ class VideoStreamWidget(object):
 
     def update(self):
         while True:
-            if self.capture.isOpened():
-                (self.status, self.frame) = self.capture.read()
-            else:
-                if(self.camera_reconnect_timer.expired()):
-                    self.capture = cv2.VideoCapture(self.uri)
-                    if not self.capture.isOpened():
-                        logger.info("%s : Allegedly not up yet, add timeout in update to reconnect ONCE BUG HERE FIXED !", self.name) 
+            self.status, self.frame = self.capture.read()
             
             if self.status:
                 if float(self.motion_config['image_rescaling_factor']) != 1.0:
@@ -144,13 +134,7 @@ class VideoStreamWidget(object):
                                 # ToDo put candidate in filesystem queue
                                 # 
                                 logger.info("%s : Significant object at %d,%d:%d,%d", self.name, x,y,w,h)
-            else:
-                #
-                # Camera down !
-                #
-                pass
-            
-            # sleep within framerate for each camera (separate thread)
+
             time.sleep(1/float(motion_config['fps'])/float(general_config['sleep_ratio']))
     
     def show_frame(self):
