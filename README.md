@@ -11,11 +11,27 @@ Tested on Debian 1:6.12.34-1+rpt1~bookworm (2025-06-26) aarch64 GNU/Linux
 sudo apt-get update 
 sudo apt-get upgrade
 sudo apt-get install 
+```
 
-ADD Hailo install
+Streamline hailo install and code / envronment for inference process (separate dir?)
 
-python -m pip install grpcio
-python -m pip install grpcio-tools
+
+Made dir object detection in hailo-rp5-examples : see if can stuff in there and just python3 -m pip install -r requirements.txt and path model
+
+Maybe just move requirements,txt and python file and module? or need to run all in Hailo env
+
+
+~/Documents/hailo-rpi5-examples/Hailo-Application-Code-Examples/runtime/hailo-8/python/object_detection
+
+
+https://github.com/hailo-ai/hailo-rpi5-examples
+
+https://github.com/hailo-ai/Hailo-Application-Code-Examples/tree/main/runtime/hailo-8/python/object_detection
+
+https://community.hailo.ai/t/object-detection-in-images-using-hailo-ai-kit-for-raspberry-pi/7599
+
+
+
 
 ```
 
