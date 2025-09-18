@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-from datetime import datetime
 
 def filter_outputs(layer_output, confidence):
     """ Pick the most probable class in each box and then filter it by confidence.
@@ -143,7 +142,7 @@ def draw_boxes(image, boxes_coord, nms_idx, scores, classes, labels, colors):
     return(image, text_all)
 
 
-def yolo_object_detection(image_filename, net, confidence, threshold, labels, colors, display, camera_name, pathname):
+def yolo_object_detection(camera_name, pathname, net, confidence, threshold, labels, colors):
     """ Apply YOLO object detection on a image_file.
         image_filename : Input image file to read
         net : YOLO v3 network object
@@ -155,7 +154,10 @@ def yolo_object_detection(image_filename, net, confidence, threshold, labels, co
 
     # read image file
     # image is an array of image data (row, column, channel)
-    image = cv2.imread(image_filename)
+
+    image_path = pathname + "/" + camera_name +".jpg"
+
+    image = cv2.imread(image_path)
 
     (H, W) = image.shape[:2]
 
@@ -198,13 +200,8 @@ def yolo_object_detection(image_filename, net, confidence, threshold, labels, co
 
     # Draw boxes on the image
     image, text_list = draw_boxes(image, boxes_coord, nms_idx, scores, classes, labels, colors)
-    timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
-    output_pathname = pathname + "/" + camera_name + "/" + timestamp + ".jpg"
+    output_pathname = pathname + "/" +".jpg"
     cv2.imwrite(output_pathname, image)
-
-    if display:
-        cv2.imshow(camera_name + "-inference", image)
-        key = cv2.waitKey(0)
 
     retval_list = []   
     for i in nms_idx:

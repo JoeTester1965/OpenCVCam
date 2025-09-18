@@ -199,7 +199,6 @@ Path(motion_config['temp_motion_directory']).mkdir(exist_ok=True)
 Path(motion_config['detected_motion_directory']).mkdir(exist_ok=True)
 for name,uri in cameras.items():
     streams[name] = VideoStreamWidget(name, uri, motion_config)
-    Path(motion_config['temp_motion_directory'] + "/" + name).mkdir(exist_ok=True)
     Path(motion_config['detected_motion_directory'] + "/" + name).mkdir(exist_ok=True)
     pass
 
