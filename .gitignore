@@ -4,7 +4,7 @@ myenv/
 masks/
 candidates/
 temp_motion/
-yolov8s_h8l.hef
-config.json
-object_detection.py
-bus.jpg
+yolo/
+detected_motion/
+cats.jpg
+__pycache__/yolo_od_utils.cpython-39.pyc

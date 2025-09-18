@@ -8,6 +8,7 @@ from threading import Thread
 import time
 import os
 import socket
+from pathlib import Path
 
 class TimeoutCheck:
 
@@ -191,14 +192,21 @@ ipc_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 ipc_port = int(general_config['ipc_port'])
 ipc_ip = general_config['ipc_ip']
 
+# SINGLE DIRS
+
+Path(motion_config['masks_directory']).mkdir(exist_ok=True)
+Path(motion_config['temp_motion_directory']).mkdir(exist_ok=True)
+Path(motion_config['detected_motion_directory']).mkdir(exist_ok=True)
 for name,uri in cameras.items():
     streams[name] = VideoStreamWidget(name, uri, motion_config)
+    Path(motion_config['temp_motion_directory'] + "/" + name).mkdir(exist_ok=True)
+    Path(motion_config['detected_motion_directory'] + "/" + name).mkdir(exist_ok=True)
+    pass
 
 while True:
     start_time = time.time()
     for name,uri in cameras.items():
         try:
-            # code below not consistent with if int(dnn_config['display_object_detect_debug']): above!!
             if int(motion_config['display_contour_debug']) or int(motion_config['display_potentially_significant_object_debug']) or int(general_config['display_raw_video']) :
                 streams[name].show_frame()
         except AttributeError:

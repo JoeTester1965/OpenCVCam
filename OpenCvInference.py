@@ -3,6 +3,9 @@ import socket
 import sys
 import logging
 import time
+import numpy as np
+import cv2
+from yolo_od_utils import yolo_object_detection
 
 def read_config(config_file):
     global config
@@ -15,7 +18,7 @@ general_config=dict(config['general'])
 
 motion_config=dict(config['motion']) 
 
-inference_config=dict(config['inference']) 
+inference_config=dict(config['inference-opencv']) 
 
 logfile = general_config['logfile']
 my_log_level_from_config = general_config['log_level']
@@ -43,6 +46,28 @@ ipc_port = int(general_config['ipc_port'])
 ipc_ip = general_config['ipc_ip']
 
 ipc_socket.bind((ipc_ip, ipc_port))
+
+
+# set filenames for the model
+coco_names_file = inference_config['classes']
+yolov3_weight_file = inference_config['weights']
+yolov3_config_file = inference_config['config']
+yolov3_confidence = float(inference_config['dnn_confidence'])
+yolov3_threshold = float(inference_config['dnn_threshold'])
+
+LABELS = open(coco_names_file).read().strip().split("\n")
+COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
+net = cv2.dnn.readNetFromDarknet(yolov3_config_file, yolov3_weight_file)
+  
+# TEST
+display = int(inference_config['display_object_detect_debug'])
+retval = yolo_object_detection("cats.jpg", net, yolov3_confidence, yolov3_threshold, 
+                               LABELS, COLORS, display, "camera_name", motion_config['detected_motion_directory'])
+
+#
+# apply blaclist and whitelist anb log
+#
+# TEST
 
 while True:
     data, addr = ipc_socket.recvfrom(1024)
