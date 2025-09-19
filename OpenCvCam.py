@@ -7,8 +7,8 @@ import logging
 from threading import Thread
 import time
 import os
-import socket
 from pathlib import Path
+import shutil
 
 class TimeoutCheck:
 
@@ -65,7 +65,7 @@ class VideoStreamWidget(object):
                     width,height = self.last_frame.shape
                     self.image_pixels = width * height
                     masks_directory = self.motion_config['masks_directory']
-                    mask_template_name = f'{masks_directory}/{self.name}-mask.jpg'
+                    mask_template_name = f'{masks_directory}/{self.name}/mask.jpg'
                     if os.path.exists(mask_template_name):
                         #use existing mask
                         self.mask = cv2.imread(mask_template_name)
@@ -76,8 +76,9 @@ class VideoStreamWidget(object):
                             self.mask = None
                     else:
                         #save new candidate template mask              
-                        candidate_mask_template_name = f'{masks_directory}/{self.name}-mask.candidate.jpg'
+                        candidate_mask_template_name = f'{masks_directory}/{self.name}/mask.candidate.jpg'
                         cv2.imwrite(candidate_mask_template_name, self.frame)
+
                 else:    
 
                     self.gray = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
@@ -123,21 +124,21 @@ class VideoStreamWidget(object):
                                 pass
                     if combined_contour != None:
                         x,y,w,h = combined_contour
-                        # colour combined countours blue
+                        # colour combined countours white
                         if int(self.motion_config['display_contour_debug']):
-                            cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,0,0),3)
+                            cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,255,255),3)
                         if (((w * h) / self.image_pixels) * 100) > float(self.motion_config['minimum_motion_screen_percent']):
                             logger.debug("%s : Potentially significant object at %d,%d:%d,%d", self.name, x,y,w,h)
-                            # colour significant contours red
+                            # colour significant objects red
                             if int(self.motion_config['display_potentially_significant_object_debug']):
-                                cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,255,255),3)
+                                cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
                             if(self.object_detection_timer.expired()):
-                                # IPC event for accelerated object detection
-                                logger.info("%s : Significant object at %d,%d:%d,%d", self.name, x,y,w,h)
-                                filename = motion_config['temp_motion_directory'] + "/" + self.name + ".jpg"
-                                cv2.imwrite(filename, self.frame)
-                                ipc_message = self.name + "," + str(x) + "," + str(y) + "," + str(w) + "," + str(h)
-                                ipc_socket.sendto(bytes(ipc_message, "utf-8"), (ipc_ip, int(ipc_port)))
+                                dir = os.listdir(motion_config['temp_motion_directory'] + "/" + self.name )
+                                if len(dir) == 0: 
+                                    logger.info("%s : Significant object at %d,%d:%d,%d", self.name, x,y,w,h)
+                                    message_text = str(x) + "-" + str(y) + "-" + str(w) + "-" + str(h) +"-"
+                                    filename = motion_config['temp_motion_directory'] + "/" + self.name + "/" + message_text + ".jpg"
+                                    cv2.imwrite(filename, self.frame)
 
             time.sleep(1/float(motion_config['fps'])/float(general_config['sleep_ratio']))
     
@@ -187,11 +188,6 @@ logger.debug("DNN started")
 
 streams = {}
 
-ipc_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-ipc_port = int(general_config['ipc_port'])
-ipc_ip = general_config['ipc_ip']
-
 # SINGLE DIRS
 
 Path(motion_config['masks_directory']).mkdir(exist_ok=True)
@@ -199,6 +195,9 @@ Path(motion_config['temp_motion_directory']).mkdir(exist_ok=True)
 Path(motion_config['detected_motion_directory']).mkdir(exist_ok=True)
 for name,uri in cameras.items():
     streams[name] = VideoStreamWidget(name, uri, motion_config)
+    Path(motion_config['masks_directory'] + "/" + name).mkdir(exist_ok=True)
+    shutil.rmtree(motion_config['temp_motion_directory'] + "/" + name)
+    Path(motion_config['temp_motion_directory'] + "/" + name).mkdir(exist_ok=True)
     Path(motion_config['detected_motion_directory'] + "/" + name).mkdir(exist_ok=True)
     pass
 

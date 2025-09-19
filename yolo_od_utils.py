@@ -142,7 +142,7 @@ def draw_boxes(image, boxes_coord, nms_idx, scores, classes, labels, colors):
     return(image, text_all)
 
 
-def yolo_object_detection(camera_name, pathname, net, confidence, threshold, labels, colors):
+def yolo_object_detection(pathname, net, confidence, threshold, labels, colors):
     """ Apply YOLO object detection on a image_file.
         image_filename : Input image file to read
         net : YOLO v3 network object
@@ -151,13 +151,7 @@ def yolo_object_detection(camera_name, pathname, net, confidence, threshold, lab
         labels : Class labels specified in coco.names
         colors : Colors assigned to the classes
     """
-
-    # read image file
-    # image is an array of image data (row, column, channel)
-
-    image_path = pathname + "/" + camera_name +".jpg"
-
-    image = cv2.imread(image_path)
+    image = cv2.imread(pathname)
 
     (H, W) = image.shape[:2]
 
@@ -197,11 +191,6 @@ def yolo_object_detection(camera_name, pathname, net, confidence, threshold, lab
     # Apply Non-max supression
     boxes_coord = rescale_box_coord(boxes, W, H)
     nms_idx = yolo_non_max_supression(boxes_coord, scores, confidence, threshold)
-
-    # Draw boxes on the image
-    image, text_list = draw_boxes(image, boxes_coord, nms_idx, scores, classes, labels, colors)
-    output_pathname = pathname + "/" +".jpg"
-    cv2.imwrite(output_pathname, image)
 
     retval_list = []   
     for i in nms_idx:
