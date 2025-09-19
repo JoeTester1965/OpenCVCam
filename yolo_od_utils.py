@@ -154,55 +154,59 @@ def yolo_object_detection(pathname, net, confidence, threshold, labels, colors):
 
     image = cv2.imread(pathname)
 
-    (H, W) = image.shape[:2]
+    retval = []
 
-    # preprocess image data with rescaling and resizing to fit YOLO input shape
-    # OpenCV assumes BGR images: we have to convert to RGB, with swapRB=True
-    blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (416, 416), swapRB=True, crop=False)
+    if image is not None:
 
-    # set a new input to the network
-    net.setInput(blob)
+        (H, W) = image.shape[:2]
 
-    # get YOLOv3's output layer names
-    ln = net.getLayerNames()
-    ln_out = [ln[i - 1] for i in net.getUnconnectedOutLayers()]
-    #ln_out = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+        # preprocess image data with rescaling and resizing to fit YOLO input shape
+        # OpenCV assumes BGR images: we have to convert to RGB, with swapRB=True
+        blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (416, 416), swapRB=True, crop=False)
 
-    # perform object detection
-    layerOutputs = net.forward(ln_out)
+        # set a new input to the network
+        net.setInput(blob)
+
+        # get YOLOv3's output layer names
+        ln = net.getLayerNames()
+        ln_out = [ln[i - 1] for i in net.getUnconnectedOutLayers()]
+        #ln_out = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+
+        # perform object detection
+        layerOutputs = net.forward(ln_out)
 
 
-    # Get the result from outputs, and filter them by confidence
-    boxes = []
-    scores = []
-    classes = []
-    for output in layerOutputs: # There are three output layers in YOLO v3
-        # Filter outputs by confidence
-        (xywh_filterd, score_filtered, class_filtered) = filter_outputs(output, confidence)
+        # Get the result from outputs, and filter them by confidence
+        boxes = []
+        scores = []
+        classes = []
+        for output in layerOutputs: # There are three output layers in YOLO v3
+            # Filter outputs by confidence
+            (xywh_filterd, score_filtered, class_filtered) = filter_outputs(output, confidence)
 
-        boxes.append(xywh_filterd)
-        scores.append(score_filtered)
-        classes.append(class_filtered)
+            boxes.append(xywh_filterd)
+            scores.append(score_filtered)
+            classes.append(class_filtered)
 
-    # Change shapes of arrays so that all boxes from any output layers are stored together
-    boxes = np.vstack([r for r in boxes])
-    scores = np.concatenate([r for r in scores], axis=None)
-    classes = np.concatenate([r for r in classes], axis=None)
+        # Change shapes of arrays so that all boxes from any output layers are stored together
+        boxes = np.vstack([r for r in boxes])
+        scores = np.concatenate([r for r in scores], axis=None)
+        classes = np.concatenate([r for r in classes], axis=None)
 
-    # Apply Non-max supression
-    boxes_coord = rescale_box_coord(boxes, W, H)
-    nms_idx = yolo_non_max_supression(boxes_coord, scores, confidence, threshold)
+        # Apply Non-max supression
+        boxes_coord = rescale_box_coord(boxes, W, H)
+        nms_idx = yolo_non_max_supression(boxes_coord, scores, confidence, threshold)
 
-    # Draw boxes on the image
-    image, text_list = draw_boxes(image, boxes_coord, nms_idx, scores, classes, labels, colors)
-    cv2.imwrite(pathname, image)
+        # Draw boxes on the image
+        image, text_list = draw_boxes(image, boxes_coord, nms_idx, scores, classes, labels, colors)
+        cv2.imwrite(pathname, image)
 
-    retval_list = []   
-    for i in nms_idx:
-        retval  = labels[classes[i]], scores[i], np.floor(boxes_coord[i]).astype(int)
-        retval_list.append(retval)
-    
-    return retval_list
+        retval_list = []   
+        for i in nms_idx:
+            retval  = labels[classes[i]], scores[i], np.floor(boxes_coord[i]).astype(int)
+            retval_list.append(retval)
+        
+        return retval_list
 
 
 

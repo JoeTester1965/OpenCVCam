@@ -66,28 +66,38 @@ while True:
             logger.warning("There should only ever be one file in %s, please manually intervene", image_path)
         elif len(files) == 1:
 
-            pass
             image_uri = image_path + "/" + files[0]
             x,y,width,height,ignore = files[0].split('-')
             retval = yolo_object_detection(image_uri, net, yolov3_confidence, yolov3_threshold, LABELS, COLORS)
             motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
             
-            if retval:
-                blacklist = False
-                whitelist = True
+            something_in_whitelist = False
 
-                if not blacklist:
-                    for object,confidence,box in retval:
+            if retval:
+
+                blacklist = inference_config['blacklist']
+                whitelist = inference_config['whitelist']
+
+                for object,confidence,box in retval:
+                    
+                    in_blacklist = False
+                    
+                    if object in blacklist:
+                        in_blacklist = True
+                    if object in whitelist:
+                        something_in_whitelist = True
+                    if not in_blacklist:
                         logger.info("%s with confidence %.2f at %s, trigger %s", object, confidence, box, motion_box) 
                     
                 timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
                 source_path = image_uri
                 dest_path = motion_config['detected_motion_directory'] + "/" + name + "/" + timestamp +".jpg"
 
-                if whitelist:
+                if something_in_whitelist:
                     os.rename(source_path, dest_path)
                 else:
                     logger.debug("Removing %s as not in whitelist", image_uri)
+                    os.remove(image_uri)
             else:
                 logger.debug("Removing %s as no inference", image_uri)
                 os.remove(image_uri)
