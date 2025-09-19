@@ -1,12 +1,6 @@
-Temp into subdir and just coords inmame
-
-Why use IPC when can parse filename, remove tx throttle add file in camera dir only of none there, mv or delete after processign!
-
 Test run!
 
-[OpenCvInference.py:93] Path C:/Users/derek/source/repos/VS_Code/OpenCVCam/OpenCVCam/temp_motion/drive.jpg does not exist
-Happens when a lot of action, ? is file not being written get a .jpg not drive.jpg. 
-
+Do blacklist and whitelist
 
 Models
   
