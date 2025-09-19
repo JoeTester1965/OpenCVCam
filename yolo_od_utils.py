@@ -151,6 +151,7 @@ def yolo_object_detection(pathname, net, confidence, threshold, labels, colors):
         labels : Class labels specified in coco.names
         colors : Colors assigned to the classes
     """
+
     image = cv2.imread(pathname)
 
     (H, W) = image.shape[:2]
@@ -191,6 +192,10 @@ def yolo_object_detection(pathname, net, confidence, threshold, labels, colors):
     # Apply Non-max supression
     boxes_coord = rescale_box_coord(boxes, W, H)
     nms_idx = yolo_non_max_supression(boxes_coord, scores, confidence, threshold)
+
+    # Draw boxes on the image
+    image, text_list = draw_boxes(image, boxes_coord, nms_idx, scores, classes, labels, colors)
+    cv2.imwrite(pathname, image)
 
     retval_list = []   
     for i in nms_idx:

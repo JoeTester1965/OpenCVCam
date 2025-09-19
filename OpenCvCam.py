@@ -101,7 +101,7 @@ class VideoStreamWidget(object):
                         for contour in contours:
                             x,y,w,h = cv2.boundingRect(contour)
                             # Colour contours grey
-                            cv2.rectangle(self.frame,(x,y),(x+w,y+h),(125,125,125),3)
+                            cv2.rectangle(self.frame,(x,y),(x+w,y+h),(125,125,125),1)
 
                     biggest_contour = None
                     combined_contour = None
@@ -126,12 +126,12 @@ class VideoStreamWidget(object):
                         x,y,w,h = combined_contour
                         # colour combined countours white
                         if int(self.motion_config['display_contour_debug']):
-                            cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,255,255),3)
+                            cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,255,255),1)
                         if (((w * h) / self.image_pixels) * 100) > float(self.motion_config['minimum_motion_screen_percent']):
                             logger.debug("%s : Potentially significant object at %d,%d:%d,%d", self.name, x,y,w,h)
                             # colour significant objects red
                             if int(self.motion_config['display_potentially_significant_object_debug']):
-                                cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
+                                cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),1)
                             if(self.object_detection_timer.expired()):
                                 dir = os.listdir(motion_config['temp_motion_directory'] + "/" + self.name )
                                 if len(dir) == 0: 
@@ -196,6 +196,7 @@ Path(motion_config['detected_motion_directory']).mkdir(exist_ok=True)
 for name,uri in cameras.items():
     streams[name] = VideoStreamWidget(name, uri, motion_config)
     Path(motion_config['masks_directory'] + "/" + name).mkdir(exist_ok=True)
+    Path(motion_config['temp_motion_directory'] + "/" + name).mkdir(exist_ok=True)
     shutil.rmtree(motion_config['temp_motion_directory'] + "/" + name)
     Path(motion_config['temp_motion_directory'] + "/" + name).mkdir(exist_ok=True)
     Path(motion_config['detected_motion_directory'] + "/" + name).mkdir(exist_ok=True)

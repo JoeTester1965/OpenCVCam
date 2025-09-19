@@ -3,16 +3,16 @@
 # DEBUG,INFO,WARNING,ERROR
 log_level = INFO
 logfile = logfile.txt
-display_raw_video = 0
+display_raw_video = 1
 sleep_ratio = 10
 
 [cameras]
 
-#side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-#back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-#front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-#drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-test_video = file:C:/Users/derek/source/repos/VS_Code/OpenCVCam/test.m4v
+side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+#test_video = file:C:/Users/derek/source/repos/VS_Code/OpenCVCam/test.m4v
 
 [motion]
 

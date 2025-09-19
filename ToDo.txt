@@ -1,8 +1,10 @@
-Test run!
+Grav test vode back garde claire about 5.00 pm 19/9
 
 Do blacklist and whitelist
 
-Models
+Soak run on PC
+
+Code Pi models
   
 https://github.com/hailo-ai/hailo_model_zoo/blob/master/docs/public_models/HAILO8L/HAILO8L_object_detection.rst
 
