@@ -4,11 +4,6 @@
 log_level = INFO
 logfile = logfile.txt
 display_raw_video = 0
-sleep_ratio = 10
-blacklist=toilet,tv
-whitelist=person,bird,cat,dog
-ipc_port = 54001
-ipc_ip = 127.0.0.1
 
 [cameras]
 
@@ -29,18 +24,17 @@ minimum_motion_screen_percent = 0.25
 motion_contours_to_consider = 10
 contour_combine_distance = 50
 display_contour_debug = 0
-display_potentially_significant_object_debug = 0
+display_potentially_significant_motion_debug = 0
 masks_directory = /home/pi/Documents/OpenCVCam/masks
-object_detection_timer = 0.2
+object_detection_timer = 0.05
 temp_motion_directory = /home/pi/Documents/OpenCVCam/temp_motion
+detected_motion_directory = /home/pi/Documents/OpenCVCam/detected_motion
 
-[inference]
-config=yolo3.cfg
-weights=yolov3.weights
-classes=yolov3.txt
-dnn_width=416
-dnn_height=416
-dnn_confidence=0.5
-bounding_box_score_threshold = 0.5
-bounding_box_nms_threshold = 0.4
-display_object_detect_debug = 1
+[inference-opencv]
+config=yolo/yolov3.cfg
+weights=yolo/yolov3.weights
+classes=yolo/coco.names
+dnn_confidence=0.4
+dnn_threshold=0.3
+blacklist=toilet,tv
+whitelist=person,bird,cat,dog,bench

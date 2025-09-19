@@ -128,19 +128,17 @@ class VideoStreamWidget(object):
                         if int(self.motion_config['display_contour_debug']):
                             cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,255,255),1)
                         if (((w * h) / self.image_pixels) * 100) > float(self.motion_config['minimum_motion_screen_percent']):
-                            logger.debug("%s : Potentially significant object at %d,%d:%d,%d", self.name, x,y,w,h)
+                            logger.debug("%s : Potentially significant motion at %d,%d:%d,%d", self.name, x,y,w,h)
                             # colour significant objects red
-                            if int(self.motion_config['display_potentially_significant_object_debug']):
+                            if int(self.motion_config['display_potentially_significant_motion_debug']):
                                 cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),1)
                             if(self.object_detection_timer.expired()):
                                 dir = os.listdir(motion_config['temp_motion_directory'] + "/" + self.name )
                                 if len(dir) == 0: 
-                                    logger.info("%s : Significant object at %d,%d:%d,%d", self.name, x,y,w,h)
+                                    logger.info("%s : Significant motion at %d,%d:%d,%d", self.name, x,y,w,h)
                                     message_text = str(x) + "-" + str(y) + "-" + str(w) + "-" + str(h) +"-"
                                     filename = motion_config['temp_motion_directory'] + "/" + self.name + "/" + message_text + ".jpg"
                                     cv2.imwrite(filename, self.frame)
-
-            time.sleep(1/float(motion_config['fps'])/float(general_config['sleep_ratio']))
     
     def show_frame(self):
         try:
@@ -206,13 +204,13 @@ while True:
     start_time = time.time()
     for name,uri in cameras.items():
         try:
-            if int(motion_config['display_contour_debug']) or int(motion_config['display_potentially_significant_object_debug']) or int(general_config['display_raw_video']) :
+            if int(motion_config['display_contour_debug']) or int(motion_config['display_potentially_significant_motion_debug']) or int(general_config['display_raw_video']) :
                 streams[name].show_frame()
         except AttributeError:
             pass
 
     # sleep well within framerate over all cameras (single thread)
-    time.sleep(1/float(motion_config['fps'])/float(general_config['sleep_ratio']))
+    time.sleep(1/float(motion_config['fps'])/10.0)
     end_time = time.time()
     delta_time = end_time - start_time
     target_time = 1.0/float(motion_config['fps'])

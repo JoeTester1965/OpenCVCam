@@ -1,8 +1,6 @@
-Do blacklist and whitelist
+Soak run on Pi
 
-Soak run on PC
-
-Code Pi models
+Code Halo models
   
 https://github.com/hailo-ai/hailo_model_zoo/blob/master/docs/public_models/HAILO8L/HAILO8L_object_detection.rst
 

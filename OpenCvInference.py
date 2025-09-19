@@ -71,7 +71,7 @@ while True:
             retval = yolo_object_detection(image_uri, net, yolov3_confidence, yolov3_threshold, LABELS, COLORS)
             motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
             
-            something_in_whitelist = False
+            something_in_whitelist = []
 
             if retval:
 
@@ -85,7 +85,7 @@ while True:
                     if object in blacklist:
                         in_blacklist = True
                     if object in whitelist:
-                        something_in_whitelist = True
+                        something_in_whitelist.append(object)
                     if not in_blacklist:
                         logger.info("%s with confidence %.2f at %s, trigger %s", object, confidence, box, motion_box) 
                     
@@ -93,7 +93,8 @@ while True:
                 source_path = image_uri
                 dest_path = motion_config['detected_motion_directory'] + "/" + name + "/" + timestamp +".jpg"
 
-                if something_in_whitelist:
+                if len(something_in_whitelist) > 0:
+                    logger.info("%s was in the whitelist and so this is a valid event", something_in_whitelist)
                     os.rename(source_path, dest_path)
                 else:
                     logger.debug("Removing %s as not in whitelist", image_uri)
@@ -101,6 +102,7 @@ while True:
             else:
                 logger.debug("Removing %s as no inference", image_uri)
                 os.remove(image_uri)
+
 
     time.sleep(0.001)    
 
