@@ -15,7 +15,7 @@ def read_config(config_file):
 
 read_config(sys.argv[1]) 
 
-cameras = dict(config['cameras']) 
+cameras = dict(config['cameras_detection']) 
 
 general_config=dict(config['general']) 
 

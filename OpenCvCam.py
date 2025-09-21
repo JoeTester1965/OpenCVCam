@@ -97,7 +97,7 @@ class VideoStreamWidget(object):
                     contours = contours[0] if len(contours) == 2 else contours[1]
                     contours = sorted(contours, key=cv2.contourArea, reverse=True)
 
-                    if int(self.motion_config['display_contour_debug']):
+                    if int(self.motion_config['draw_contour_debug']):
                         for contour in contours:
                             x,y,w,h = cv2.boundingRect(contour)
                             # Colour contours grey
@@ -125,12 +125,12 @@ class VideoStreamWidget(object):
                     if combined_contour != None:
                         x,y,w,h = combined_contour
                         # colour combined countours white
-                        if int(self.motion_config['display_contour_debug']):
+                        if int(self.motion_config['draw_contour_debug']):
                             cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,255,255),1)
                         if (((w * h) / self.image_pixels) * 100) > float(self.motion_config['minimum_motion_screen_percent']):
                             logger.debug("%s : Potentially significant motion at %d,%d:%d,%d", self.name, x,y,w,h)
                             # colour significant objects red
-                            if int(self.motion_config['display_potentially_significant_motion_debug']):
+                            if int(self.motion_config['draw_potentially_significant_motion_debug']):
                                 cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),1)
                             if(self.object_detection_timer.expired()):
                                 dir = os.listdir(motion_config['temp_motion_directory'] + "/" + self.name )
@@ -154,7 +154,7 @@ def read_config(config_file):
 
 read_config(sys.argv[1]) 
 
-cameras = dict(config['cameras']) 
+cameras = dict(config['cameras_detection']) 
 	
 motion_config=dict(config['motion']) 
 
@@ -204,7 +204,7 @@ while True:
     start_time = time.time()
     for name,uri in cameras.items():
         try:
-            if int(motion_config['display_contour_debug']) or int(motion_config['display_potentially_significant_motion_debug']) or int(general_config['display_raw_video']) :
+            if int(general_config['display_video']) :
                 streams[name].show_frame()
         except AttributeError:
             pass

@@ -3,14 +3,24 @@
 # DEBUG,INFO,WARNING,ERROR
 log_level = INFO
 logfile = logfile.txt
-display_raw_video = 1
+display_video = 1
 
-[cameras]
+[cameras_detection]
 
 side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
 back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
 front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
 drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+#test_video = file:C:/Users/derek/source/repos/VS_Code/OpenCVCam/test.m4v
+
+[cameras_recording]
+
+cameras_recording_directory = C:/Users/derek/source/repos/VS_Code/OpenCVCam/OpenCVCam/recording
+
+side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
+back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
+front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
+drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
 #test_video = file:C:/Users/derek/source/repos/VS_Code/OpenCVCam/test.m4v
 
 [motion]
@@ -23,8 +33,8 @@ fps = 10
 minimum_motion_screen_percent = 0.25
 motion_contours_to_consider = 10
 contour_combine_distance = 50
-display_contour_debug = 1
-display_potentially_significant_motion_debug = 1
+draw_contour_debug = 1
+draw_potentially_significant_motion_debug = 1
 masks_directory = C:/Users/derek/source/repos/VS_Code/OpenCVCam/OpenCVCam/masks
 object_detection_timer = 0.05
 temp_motion_directory = C:/Users/derek/source/repos/VS_Code/OpenCVCam/OpenCVCam/temp_motion

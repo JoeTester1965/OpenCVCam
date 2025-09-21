@@ -1,3 +1,12 @@
+
+Add config file entry for video_recording as well as video_events
+[cameras_recording]
+
+Process to store video along with config for video length (1hr)
+
+Pull out besy detection and option to mqtt with same format as cudacam
+
+
 Soak run on Pi
 
 Code Halo models
