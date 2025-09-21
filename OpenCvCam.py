@@ -150,7 +150,7 @@ class VideoStreamWidget(object):
 def read_config(config_file):
     global config
     config = configparser.ConfigParser()
-    config.read(sys.argv[1])
+    config.read(config_file)
 
 read_config(sys.argv[1]) 
 

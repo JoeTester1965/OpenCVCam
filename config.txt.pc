@@ -13,16 +13,6 @@ front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&str
 drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
 #test_video = file:C:/Users/derek/source/repos/VS_Code/OpenCVCam/test.m4v
 
-[cameras_recording]
-
-cameras_recording_directory = C:/Users/derek/source/repos/VS_Code/OpenCVCam/OpenCVCam/recording
-
-side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
-back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
-front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
-drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
-#test_video = file:C:/Users/derek/source/repos/VS_Code/OpenCVCam/test.m4v
-
 [motion]
 
 image_rescaling_factor = 1.0
