@@ -7,6 +7,7 @@ import cv2
 from yolo_od_utils import yolo_object_detection
 from datetime import datetime
 import os
+import paho.mqtt.client as mqtt
 
 def read_config(config_file):
     global config
@@ -85,16 +86,33 @@ while True:
                     if object in blacklist:
                         in_blacklist = True
                     if object in whitelist:
-                        something_in_whitelist.append(object)
+                        something_in_whitelist.append([object, confidence,box,motion_box])
                     if not in_blacklist:
-                        logger.info("%s with confidence %.2f at %s, trigger %s", object, confidence, box, motion_box) 
-                    
+                        logger.debug("%s with confidence %.2f at %s, trigger %s", object, confidence, box, motion_box) 
+
+                highest_confidence_object = {}         
+                
+                if len(something_in_whitelist) > 0:
+                
+                    highest_confidence_found = 0.0 
+                    highest_confidence_index = 0     
+                    for index,object  in enumerate(something_in_whitelist):
+                        if object[1] > highest_confidence_found:
+                            highest_confidence_found = object[1]
+                            highest_confidence_index = index
+
+                    highest_confidence_object = something_in_whitelist[highest_confidence_index] 
+
                 timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
                 source_path = image_uri
                 dest_path = motion_config['detected_motion_directory'] + "/" + name + "/" + timestamp +".jpg"
 
-                if len(something_in_whitelist) > 0:
-                    logger.info("%s was in the whitelist and so this is a valid event", something_in_whitelist)
+                if len(highest_confidence_object) > 0:
+                    logger.info("%s highest confidence whitelist event %.3f at %s, motion trigger %s",
+                                 highest_confidence_object[0],
+                                 highest_confidence_object[1],
+                                 highest_confidence_object[2],
+                                 highest_confidence_object[3],)
                     os.rename(source_path, dest_path)
                 else:
                     logger.debug("Removing %s as not in whitelist", image_uri)

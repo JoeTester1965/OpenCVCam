@@ -8,3 +8,4 @@ yolo/
 detected_motion/
 cats.jpg
 __pycache__/yolo_od_utils.cpython-39.pyc
+__pycache__/yolo_od_utils.cpython-310.pyc

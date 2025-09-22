@@ -1,15 +1,12 @@
 
-Add config file entry for video_recording as well as video_events
-[cameras_recording]
+Do Paho on Pi, cannt install !!
 
-Process to store video along with config for video length (1hr)
-
-Pull out besy detection and option to mqtt with same format as cudacam
-
-
-Soak run on Pi
+Soak run with cv2 on Pi
 
 Code Halo models
   
 https://github.com/hailo-ai/hailo_model_zoo/blob/master/docs/public_models/HAILO8L/HAILO8L_object_detection.rst
+
+Mediamtx on pi as separate install for recording:
+	https://github.com/bluenviron/mediamtx
 
