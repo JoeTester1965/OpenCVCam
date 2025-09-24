@@ -10,7 +10,7 @@ Tested on Debian 1:6.12.34-1+rpt1~bookworm (2025-06-26) aarch64 GNU/Linux
 ```console
 sudo apt-get update 
 sudo apt-get upgrade
-sudo apt-get install python3-paho-mqtt
+sudo apt-get install python3-paho-mqtt python3-pill
 cd yoloo
 wget https://www.kaggle.com/datasets/shivam316/yolov3-weights
 cd ..

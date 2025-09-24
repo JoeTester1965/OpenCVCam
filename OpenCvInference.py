@@ -8,6 +8,7 @@ from yolo_od_utils import yolo_object_detection
 from datetime import datetime
 import os
 import paho.mqtt.client as mqtt
+from PIL import Image
 
 def read_config(config_file):
     global config
@@ -79,71 +80,80 @@ while True:
         elif len(files) == 1:
 
             image_uri = image_path + "/" + files[0]
-            image = cv2.imread(image_uri)
-            image_width, image_height, image_depth = image.shape
-            x,y,width,height,ignore = files[0].split('-')
-            retval = yolo_object_detection(image_uri, net, yolov3_confidence, yolov3_threshold, LABELS, COLORS)
-            motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
+
+            # give OS time to write image from other process, really need IPC !
+            time.sleep(0.1)
+
+            try:
+                image = Image.open(image_uri).convert("RGB") 
+                image = np.asarray(image)
+                image_width, image_height, image_depth = image.shape
+                x,y,width,height,ignore = files[0].split('-')
+                retval = yolo_object_detection(image_uri, net, yolov3_confidence, yolov3_threshold, LABELS, COLORS)
+                motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
             
-            something_in_whitelist = []
+                something_in_whitelist = []
 
-            if retval:
+                if retval:
 
-                blacklist = inference_config['blacklist']
-                whitelist = inference_config['whitelist']
+                    blacklist = inference_config['blacklist']
+                    whitelist = inference_config['whitelist']
 
-                for object,confidence,box in retval:
+                    for object,confidence,box in retval:
+                        
+                        in_blacklist = False
+                        
+                        if object in blacklist:
+                            in_blacklist = True
+                        if object in whitelist:
+                            something_in_whitelist.append([object, confidence,box,motion_box])
+                        if not in_blacklist:
+                            logger.debug("%s with confidence %.2f at %s, trigger %s", object, confidence, box, motion_box) 
+
+                    highest_confidence_object = {}         
                     
-                    in_blacklist = False
+                    if len(something_in_whitelist) > 0:
                     
-                    if object in blacklist:
-                        in_blacklist = True
-                    if object in whitelist:
-                        something_in_whitelist.append([object, confidence,box,motion_box])
-                    if not in_blacklist:
-                        logger.debug("%s with confidence %.2f at %s, trigger %s", object, confidence, box, motion_box) 
+                        highest_confidence_found = 0.0 
+                        highest_confidence_index = 0     
+                        for index,object  in enumerate(something_in_whitelist):
+                            if object[1] > highest_confidence_found:
+                                highest_confidence_found = object[1]
+                                highest_confidence_index = index
 
-                highest_confidence_object = {}         
-                
-                if len(something_in_whitelist) > 0:
-                
-                    highest_confidence_found = 0.0 
-                    highest_confidence_index = 0     
-                    for index,object  in enumerate(something_in_whitelist):
-                        if object[1] > highest_confidence_found:
-                            highest_confidence_found = object[1]
-                            highest_confidence_index = index
+                        highest_confidence_object = something_in_whitelist[highest_confidence_index] 
 
-                    highest_confidence_object = something_in_whitelist[highest_confidence_index] 
+                    timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
+                    source_path = image_uri
+                    dest_path = motion_config['detected_motion_directory'] + "/" + name + "/" + timestamp +".jpg"
 
-                timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
-                source_path = image_uri
-                dest_path = motion_config['detected_motion_directory'] + "/" + name + "/" + timestamp +".jpg"
+                    if len(highest_confidence_object) > 0:
+                        if config.has_section("mqtt"):
+                            mqtt_config = config['mqtt']
 
-                if len(highest_confidence_object) > 0:
-                    if config.has_section("mqtt"):
-                        mqtt_config = config['mqtt']
+                            x = round(((box[0] + box[2])/2)/image_width,2)
+                            y = round(((box[1] + box[3])/2)/image_height,2)
 
-                        x = round(((box[0] + box[2])/2)/image_width,2)
-                        y = round(((box[1] + box[3])/2)/image_height,2)
+                            message = name + ":" + highest_confidence_object[0] + ":" + str(x) + " " + str(y)
 
-                        message = name + ":" + highest_confidence_object[0] + ":" + str(x) + " " + str(y)
-
-                        mqtt_client.publish(mqtt_config["mqtt_topic"], message) 
-                             
-                    logger.info("%s highest confidence %.3f in whitelist at %s, motion trigger %s",
-                                 highest_confidence_object[0],
-                                 highest_confidence_object[1],
-                                 highest_confidence_object[2],
-                                 highest_confidence_object[3],)
-                    os.rename(source_path, dest_path)
+                            mqtt_client.publish(mqtt_config["mqtt_topic"], message) 
+                                
+                        logger.info("%s at %s highest confidence %.3f in whitelist at %s, motion trigger %s",
+                                    name,
+                                    highest_confidence_object[0],
+                                    highest_confidence_object[1],
+                                    highest_confidence_object[2],
+                                    highest_confidence_object[3],)
+                        os.rename(source_path, dest_path)
+                    else:
+                        logger.debug("Removing %s as not in whitelist", image_uri)
+                        os.remove(image_uri)
                 else:
-                    logger.debug("Removing %s as not in whitelist", image_uri)
+                    logger.debug("Removing %s as no inference", image_uri)
                     os.remove(image_uri)
-            else:
-                logger.debug("Removing %s as no inference", image_uri)
-                os.remove(image_uri)
 
+            except Exception as e:
+                logger.warning(e)
 
     time.sleep(0.001)    
 

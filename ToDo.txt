@@ -1,12 +1,4 @@
-
-Do Paho on Pi, cannt install !!
-
 Soak run with cv2 on Pi
 
-Code Halo models
-  
-https://github.com/hailo-ai/hailo_model_zoo/blob/master/docs/public_models/HAILO8L/HAILO8L_object_detection.rst
-
-Mediamtx on pi as separate install for recording:
-	https://github.com/bluenviron/mediamtx
+# give OS time to write image from other process, really need IPC !
 
