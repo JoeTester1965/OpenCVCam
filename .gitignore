@@ -4,8 +4,7 @@ myenv/
 masks/
 candidates/
 temp_motion/
-yolo/
+yolo/yolov3.weights
 detected_motion/
-cats.jpg
-__pycache__/yolo_od_utils.cpython-39.pyc
-__pycache__/yolo_od_utils.cpython-310.pyc
+392-184-32-80-.jpg
+*.pyc

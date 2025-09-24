@@ -44,6 +44,17 @@ logger = logging.getLogger(__name__)
 
 logger.info("OpenCVCamInference started")
 
+if config.has_section("mqtt"):
+    mqtt_client = mqtt.Client()
+    mqtt_config = config['mqtt']
+    mqtt_client.username_pw_set(mqtt_config["mqtt_username"], mqtt_config["mqtt_password"])
+    try:
+        mqtt_client.connect(mqtt_config["mqtt_ip_address"], int(mqtt_config["mqtt_port"]))
+        mqtt_client.loop_start() 
+    except:
+        logger.error("Cannot connect to MQTT server at %s:%s", mqtt_config["mqtt_ip_address"], mqtt_config["mqtt_port"])
+
+
 # set filenames for the model
 coco_names_file = inference_config['classes']
 yolov3_weight_file = inference_config['weights']
@@ -68,6 +79,8 @@ while True:
         elif len(files) == 1:
 
             image_uri = image_path + "/" + files[0]
+            image = cv2.imread(image_uri)
+            image_width, image_height, image_depth = image.shape
             x,y,width,height,ignore = files[0].split('-')
             retval = yolo_object_detection(image_uri, net, yolov3_confidence, yolov3_threshold, LABELS, COLORS)
             motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
@@ -108,7 +121,17 @@ while True:
                 dest_path = motion_config['detected_motion_directory'] + "/" + name + "/" + timestamp +".jpg"
 
                 if len(highest_confidence_object) > 0:
-                    logger.info("%s highest confidence whitelist event %.3f at %s, motion trigger %s",
+                    if config.has_section("mqtt"):
+                        mqtt_config = config['mqtt']
+
+                        x = round(((box[0] + box[2])/2)/image_width,2)
+                        y = round(((box[1] + box[3])/2)/image_height,2)
+
+                        message = name + ":" + highest_confidence_object[0] + ":" + str(x) + " " + str(y)
+
+                        mqtt_client.publish(mqtt_config["mqtt_topic"], message) 
+                             
+                    logger.info("%s highest confidence %.3f in whitelist at %s, motion trigger %s",
                                  highest_confidence_object[0],
                                  highest_confidence_object[1],
                                  highest_confidence_object[2],
