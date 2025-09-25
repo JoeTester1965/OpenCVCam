@@ -118,13 +118,13 @@ class VideoStreamWidget(object):
                             message_text = str(x) + "-" + str(y) + "-" + str(w) + "-" + str(h) +"-"
                             uri = motion_config['temp_motion_directory'] + "/" + self.name + "/" + message_text + ".jpg"
                                     
-                            if writer_flag[name].is_set() == False:
-                                writer_flag[name].set()
-                                writer_message[name] = message_text
-                                writer_uri[name] = uri
+                            if writer_flag[self.name].is_set() == False:
+                                writer_flag[self.name].set()
+                                writer_message[self.name] = message_text
+                                writer_uri[self.name] = uri
                                 cv2.imwrite(uri, self.frame)
                             else:
-                                logger.info("Blocked passing a frame %s for %s", uri, name)  
+                                logger.info("Blocked passing a frame %s for %s", uri, self.name)  
     
     def show_frame(self):
         try:
@@ -202,23 +202,33 @@ LABELS = open(coco_names_file).read().strip().split("\n")
 COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
 net = cv2.dnn.readNetFromDarknet(yolov3_config_file, yolov3_weight_file)
 
+if config.has_section("mqtt"):
+    mqtt_client = mqtt.Client()
+    mqtt_config = config['mqtt']
+    mqtt_client.username_pw_set(mqtt_config["mqtt_username"], mqtt_config["mqtt_password"])
+    try:
+        mqtt_client.connect(mqtt_config["mqtt_ip_address"], int(mqtt_config["mqtt_port"]))
+        mqtt_client.loop_start() 
+    except:
+        logger.error("Cannot connect to MQTT server at %s:%s", mqtt_config["mqtt_ip_address"], mqtt_config["mqtt_port"])
+
 while True:
     start_time = time.time()
-    for name,uri in cameras.items():
+    for camera_name,uri in cameras.items():
         try:
             if int(general_config['display_video']) :
-                streams[name].show_frame()
+                streams[camera_name].show_frame()
         except AttributeError:
             pass
         
-        if writer_flag[name].is_set() == True:
-            logger.info("Processing a frame for %s", name) 
-            
-            image_uri = writer_uri[name]
+        if writer_flag[camera_name].is_set() == True:
+            logger.info("Processing a frame for %s", camera_name) 
+            time.sleep(0.1)
+            image_uri = writer_uri[camera_name]
             image = Image.open(image_uri).convert("RGB") 
             image = np.asarray(image)
             image_width, image_height, image_depth = image.shape
-            x,y,width,height,ignore = writer_message[name].split('-')
+            x,y,width,height,ignore = writer_message[camera_name].split('-')
             retval = yolo_object_detection(image_uri, net, yolov3_confidence, yolov3_threshold, LABELS, COLORS)
             motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
             
@@ -255,7 +265,7 @@ while True:
 
                 timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
                 source_path = image_uri
-                dest_path = motion_config['detected_motion_directory'] + "/" + name + "/" + timestamp +".jpg"
+                dest_path = motion_config['detected_motion_directory'] + "/" + camera_name + "/" + timestamp +".jpg"
 
                 if len(highest_confidence_object) > 0:
                     if config.has_section("mqtt"):
@@ -264,12 +274,12 @@ while True:
                         x = round(((box[0] + box[2])/2)/image_width,2)
                         y = round(((box[1] + box[3])/2)/image_height,2)
 
-                        message = name + ":" + highest_confidence_object[0] + ":" + str(x) + " " + str(y)
+                        message = camera_name + ":" + highest_confidence_object[0] + ":" + str(x) + " " + str(y)
 
                         mqtt_client.publish(mqtt_config["mqtt_topic"], message) 
                                 
                     logger.info("%s at %s highest confidence %.3f in whitelist at %s, motion trigger %s",
-                                name,
+                                camera_name,
                                 highest_confidence_object[0],
                                 highest_confidence_object[1],
                                 highest_confidence_object[2],
@@ -282,8 +292,8 @@ while True:
                 logger.debug("Removing %s as no inference", image_uri)
                 os.remove(image_uri)
 
-            logger.info("Procesesed a frame for %s", name) 
-            writer_flag[name].clear()
+            logger.info("Procesesed a frame for %s", camera_name) 
+            writer_flag[camera_name].clear()
 
     # sleep well within framerate over all cameras (single thread)
     time.sleep(1/float(motion_config['fps'])/10.0)
