@@ -7,11 +7,11 @@ display_video = 0
 
 [cameras_detection]
 
-side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-#test_video = file:/home/pi/Documents/test.m4v
+#side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+#back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+#front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+#drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+test_video = file:/home/pi/Documents/test.m4v
 
 [motion]
 
@@ -26,7 +26,6 @@ contour_combine_distance = 50
 draw_contour_debug = 0
 draw_potentially_significant_motion_debug = 0
 masks_directory = /home/pi/Documents/OpenCVCam/masks
-object_detection_timer = 0.05
 temp_motion_directory = /home/pi/Documents/OpenCVCam/temp_motion
 detected_motion_directory = /home/pi/Documents/OpenCVCam/detected_motion
 

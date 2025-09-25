@@ -1,4 +1,14 @@
-Soak run with cv2 on Pi
+One threaded app.
 
-# give OS time to write image from other process, really need IPC !
+reader_ready and writer_sent co-ord for each camera 
+and then add pipe for filename then shared memory for np array.
+
+https://www.instructables.com/Starting-and-Stopping-Python-Threads-With-Events-i/
+
+https://docs.python.org/3/library/multiprocessing.shared_memory.html
+
+https://luis-sena.medium.com/sharing-big-numpy-arrays-across-python-processes-abf0dc2a0ab2
+
+https://superfastpython.com/numpy-share-array-processes/
+
 

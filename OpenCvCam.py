@@ -4,32 +4,15 @@ import numpy as np;
 import configparser
 import sys
 import logging
-from threading import Thread
+from threading import Thread,Event
 import time
 import os
 from pathlib import Path
 import shutil
-
-class TimeoutCheck:
-
-	def __init__(self, seconds_to_expire):
-		self._start_time = time.perf_counter()
-		self._seconds_to_expire = seconds_to_expire
-
-	def reset(self):
-		if self._start_time is None:
-			return None
-		self._start_time = time.perf_counter()
-
-	def expired(self):
-		if self._start_time is None:
-			return None
-		elapsed_time = time.perf_counter() - self._start_time
-		if elapsed_time > self._seconds_to_expire:
-			self._start_time = time.perf_counter()
-			return True
-		else:
-			return False
+from PIL import Image
+from yolo_od_utils import yolo_object_detection
+from datetime import datetime
+import paho.mqtt.client as mqtt
 
 class VideoStreamWidget(object):
     def __init__(self, name, uri, motion_config):
@@ -46,7 +29,6 @@ class VideoStreamWidget(object):
 
         self.capture = cv2.VideoCapture(uri)
 
-        self.object_detection_timer = TimeoutCheck(float(motion_config['object_detection_timer']))
         self.thread = Thread(target=self.update, args=())
         self.thread.daemon = True
         self.thread.start()
@@ -132,13 +114,17 @@ class VideoStreamWidget(object):
                             # colour significant objects red
                             if int(self.motion_config['draw_potentially_significant_motion_debug']):
                                 cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),1)
-                            if(self.object_detection_timer.expired()):
-                                dir = os.listdir(motion_config['temp_motion_directory'] + "/" + self.name )
-                                if len(dir) == 0: 
-                                    logger.info("%s : Significant motion at %d,%d:%d,%d", self.name, x,y,w,h)
-                                    message_text = str(x) + "-" + str(y) + "-" + str(w) + "-" + str(h) +"-"
-                                    filename = motion_config['temp_motion_directory'] + "/" + self.name + "/" + message_text + ".jpg"
-                                    cv2.imwrite(filename, self.frame)
+                            logger.info("%s : Significant motion at %d,%d:%d,%d", self.name, x,y,w,h)
+                            message_text = str(x) + "-" + str(y) + "-" + str(w) + "-" + str(h) +"-"
+                            uri = motion_config['temp_motion_directory'] + "/" + self.name + "/" + message_text + ".jpg"
+                                    
+                            if writer_flag[name].is_set() == False:
+                                writer_flag[name].set()
+                                writer_message[name] = message_text
+                                writer_uri[name] = uri
+                                cv2.imwrite(uri, self.frame)
+                            else:
+                                logger.info("Blocked passing a frame %s for %s", uri, name)  
     
     def show_frame(self):
         try:
@@ -159,6 +145,8 @@ cameras = dict(config['cameras_detection'])
 motion_config=dict(config['motion']) 
 
 general_config=dict(config['general']) 
+
+inference_config=dict(config['inference-opencv']) 
 
 logfile = general_config['logfile']
 my_log_level_from_config = general_config['log_level']
@@ -186,7 +174,11 @@ logger.debug("DNN started")
 
 streams = {}
 
-# SINGLE DIRS
+writer_flag = {}
+
+writer_message = {}
+
+writer_uri = {}
 
 Path(motion_config['masks_directory']).mkdir(exist_ok=True)
 Path(motion_config['temp_motion_directory']).mkdir(exist_ok=True)
@@ -198,7 +190,17 @@ for name,uri in cameras.items():
     shutil.rmtree(motion_config['temp_motion_directory'] + "/" + name)
     Path(motion_config['temp_motion_directory'] + "/" + name).mkdir(exist_ok=True)
     Path(motion_config['detected_motion_directory'] + "/" + name).mkdir(exist_ok=True)
-    pass
+    writer_flag[name] = Event() 
+
+coco_names_file = inference_config['classes']
+yolov3_weight_file = inference_config['weights']
+yolov3_config_file = inference_config['config']
+yolov3_confidence = float(inference_config['dnn_confidence'])
+yolov3_threshold = float(inference_config['dnn_threshold'])
+
+LABELS = open(coco_names_file).read().strip().split("\n")
+COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
+net = cv2.dnn.readNetFromDarknet(yolov3_config_file, yolov3_weight_file)
 
 while True:
     start_time = time.time()
@@ -208,6 +210,80 @@ while True:
                 streams[name].show_frame()
         except AttributeError:
             pass
+        
+        if writer_flag[name].is_set() == True:
+            logger.info("Processing a frame for %s", name) 
+            
+            image_uri = writer_uri[name]
+            image = Image.open(image_uri).convert("RGB") 
+            image = np.asarray(image)
+            image_width, image_height, image_depth = image.shape
+            x,y,width,height,ignore = writer_message[name].split('-')
+            retval = yolo_object_detection(image_uri, net, yolov3_confidence, yolov3_threshold, LABELS, COLORS)
+            motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
+            
+            something_in_whitelist = []
+
+            if retval:
+
+                blacklist = inference_config['blacklist']
+                whitelist = inference_config['whitelist']
+
+                for object,confidence,box in retval:
+                        
+                    in_blacklist = False
+                        
+                    if object in blacklist:
+                        in_blacklist = True
+                    if object in whitelist:
+                        something_in_whitelist.append([object, confidence,box,motion_box])
+                    if not in_blacklist:
+                        logger.debug("%s with confidence %.2f at %s, trigger %s", object, confidence, box, motion_box) 
+
+                highest_confidence_object = {}         
+                    
+                if len(something_in_whitelist) > 0:
+                    
+                    highest_confidence_found = 0.0 
+                    highest_confidence_index = 0     
+                    for index,object  in enumerate(something_in_whitelist):
+                        if object[1] > highest_confidence_found:
+                            highest_confidence_found = object[1]
+                            highest_confidence_index = index
+
+                    highest_confidence_object = something_in_whitelist[highest_confidence_index] 
+
+                timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
+                source_path = image_uri
+                dest_path = motion_config['detected_motion_directory'] + "/" + name + "/" + timestamp +".jpg"
+
+                if len(highest_confidence_object) > 0:
+                    if config.has_section("mqtt"):
+                        mqtt_config = config['mqtt']
+
+                        x = round(((box[0] + box[2])/2)/image_width,2)
+                        y = round(((box[1] + box[3])/2)/image_height,2)
+
+                        message = name + ":" + highest_confidence_object[0] + ":" + str(x) + " " + str(y)
+
+                        mqtt_client.publish(mqtt_config["mqtt_topic"], message) 
+                                
+                    logger.info("%s at %s highest confidence %.3f in whitelist at %s, motion trigger %s",
+                                name,
+                                highest_confidence_object[0],
+                                highest_confidence_object[1],
+                                highest_confidence_object[2],
+                                highest_confidence_object[3],)
+                    os.rename(source_path, dest_path)
+                else:
+                    logger.debug("Removing %s as not in whitelist", image_uri)
+                    os.remove(image_uri)
+            else:
+                logger.debug("Removing %s as no inference", image_uri)
+                os.remove(image_uri)
+
+            logger.info("Procesesed a frame for %s", name) 
+            writer_flag[name].clear()
 
     # sleep well within framerate over all cameras (single thread)
     time.sleep(1/float(motion_config['fps'])/10.0)
