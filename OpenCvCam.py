@@ -301,5 +301,5 @@ while True:
     delta_time = end_time - start_time
     target_time = 1.0/float(motion_config['fps'])
     if(delta_time > target_time):
-       logger.info("Not real time: execution in %.3f not %.3f seconds", delta_time, target_time)
+       logger.info("Not real time: main thread execution in %.3f not %.3f seconds", delta_time, target_time)
     
