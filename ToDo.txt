@@ -1,7 +1,8 @@
 One threaded app.
 
 reader_ready and writer_sent co-ord for each camera 
-and then add pipe for filename then shared memory for np array.
+
+-> then add pipe for filename then shared memory for np array and remove sleep in rx!.
 
 https://www.instructables.com/Starting-and-Stopping-Python-Threads-With-Events-i/
 
