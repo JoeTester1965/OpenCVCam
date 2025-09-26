@@ -5,6 +5,7 @@ import configparser
 import sys
 import logging
 from threading import Thread,Event
+import queue
 import time
 import os
 from pathlib import Path
@@ -13,6 +14,7 @@ from PIL import Image
 from yolo_od_utils import yolo_object_detection
 from datetime import datetime
 import paho.mqtt.client as mqtt
+from multiprocessing import shared_memory
 
 class VideoStreamWidget(object):
     def __init__(self, name, uri, motion_config):
@@ -60,6 +62,8 @@ class VideoStreamWidget(object):
                         #save new candidate template mask              
                         candidate_mask_template_name = f'{masks_directory}/{self.name}/mask.candidate.jpg'
                         cv2.imwrite(candidate_mask_template_name, self.frame)
+                    
+                    logger.info("image object size for %s is %d", self.name, self.frame.size)
 
                 else:    
 
@@ -110,21 +114,18 @@ class VideoStreamWidget(object):
                         if int(self.motion_config['draw_contour_debug']):
                             cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,255,255),1)
                         if (((w * h) / self.image_pixels) * 100) > float(self.motion_config['minimum_motion_screen_percent']):
-                            logger.debug("%s : Potentially significant motion at %d,%d:%d,%d", self.name, x,y,w,h)
-                            # colour significant objects red
+                             # colour significant objects red
                             if int(self.motion_config['draw_potentially_significant_motion_debug']):
                                 cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),1)
-                            logger.info("%s : Significant motion at %d,%d:%d,%d", self.name, x,y,w,h)
-                            message_text = str(x) + "-" + str(y) + "-" + str(w) + "-" + str(h) +"-"
-                            uri = motion_config['temp_motion_directory'] + "/" + self.name + "/" + message_text + ".jpg"
+                            logger.debug("%s : Significant motion at %d,%d:%d,%d", self.name, x,y,w,h)
                                     
                             if writer_flag[self.name].is_set() == False:
                                 writer_flag[self.name].set()
-                                writer_message[self.name] = message_text
-                                writer_uri[self.name] = uri
-                                cv2.imwrite(uri, self.frame)
+                                writer_queue[self.name].put([x,y,w,h])
+                                writer_shared_memory[self.name] = self.frame
+                                pass
                             else:
-                                logger.info("Blocked passing a frame %s for %s", uri, self.name)  
+                                logger.info("%s : Blocked processing significant motion at %d,%d:%d,%d", self.name, x,y,w,h)  
     
     def show_frame(self):
         try:
@@ -138,8 +139,12 @@ def read_config(config_file):
     config = configparser.ConfigParser()
     config.read(config_file)
 
-read_config(sys.argv[1]) 
+if not os.path.isfile(sys.argv[1]):
+    print("Need a config file please")
+    sys.exit()
 
+read_config(sys.argv[1]) 
+ 
 cameras = dict(config['cameras_detection']) 
 	
 motion_config=dict(config['motion']) 
@@ -176,21 +181,22 @@ streams = {}
 
 writer_flag = {}
 
-writer_message = {}
+writer_queue = {}
 
-writer_uri = {}
+writer_shared_memory = {}
 
 Path(motion_config['masks_directory']).mkdir(exist_ok=True)
-Path(motion_config['temp_motion_directory']).mkdir(exist_ok=True)
 Path(motion_config['detected_motion_directory']).mkdir(exist_ok=True)
 for name,uri in cameras.items():
+    writer_shared_memory[name] = shared_memory.SharedMemory(create=True, size= int(motion_config['max_image_object_size']))
     streams[name] = VideoStreamWidget(name, uri, motion_config)
     Path(motion_config['masks_directory'] + "/" + name).mkdir(exist_ok=True)
-    Path(motion_config['temp_motion_directory'] + "/" + name).mkdir(exist_ok=True)
-    shutil.rmtree(motion_config['temp_motion_directory'] + "/" + name)
-    Path(motion_config['temp_motion_directory'] + "/" + name).mkdir(exist_ok=True)
     Path(motion_config['detected_motion_directory'] + "/" + name).mkdir(exist_ok=True)
+    
     writer_flag[name] = Event() 
+
+    writer_queue[name] = queue.Queue()
+
 
 coco_names_file = inference_config['classes']
 yolov3_weight_file = inference_config['weights']
@@ -222,14 +228,13 @@ while True:
             pass
         
         if writer_flag[camera_name].is_set() == True:
-            logger.info("Processing a frame for %s", camera_name) 
-            time.sleep(0.1)
-            image_uri = writer_uri[camera_name]
-            image = Image.open(image_uri).convert("RGB") 
-            image = np.asarray(image)
+            logger.debug("Processing a frame for %s", camera_name) 
+            x,y,width,height = writer_queue[camera_name].get()
+            image = writer_shared_memory[camera_name]
+           
+            retval = yolo_object_detection(image, net, yolov3_confidence, yolov3_threshold, LABELS, COLORS)
+        
             image_width, image_height, image_depth = image.shape
-            x,y,width,height,ignore = writer_message[camera_name].split('-')
-            retval = yolo_object_detection(image_uri, net, yolov3_confidence, yolov3_threshold, LABELS, COLORS)
             motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
             
             something_in_whitelist = []
@@ -246,7 +251,7 @@ while True:
                     if object in blacklist:
                         in_blacklist = True
                     if object in whitelist:
-                        something_in_whitelist.append([object, confidence,box,motion_box])
+                        something_in_whitelist.append([object,confidence,box,motion_box])
                     if not in_blacklist:
                         logger.debug("%s with confidence %.2f at %s, trigger %s", object, confidence, box, motion_box) 
 
@@ -264,7 +269,6 @@ while True:
                     highest_confidence_object = something_in_whitelist[highest_confidence_index] 
 
                 timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
-                source_path = image_uri
                 dest_path = motion_config['detected_motion_directory'] + "/" + camera_name + "/" + timestamp +".jpg"
 
                 if len(highest_confidence_object) > 0:
@@ -284,15 +288,10 @@ while True:
                                 highest_confidence_object[1],
                                 highest_confidence_object[2],
                                 highest_confidence_object[3],)
-                    os.rename(source_path, dest_path)
-                else:
-                    logger.debug("Removing %s as not in whitelist", image_uri)
-                    os.remove(image_uri)
-            else:
-                logger.debug("Removing %s as no inference", image_uri)
-                os.remove(image_uri)
+                    cv2.imwrite(dest_path, image)
 
-            logger.info("Procesesed a frame for %s", camera_name) 
+            
+            logger.debug("Procesesed a frame for %s", camera_name) 
             writer_flag[camera_name].clear()
 
     # sleep well within framerate over all cameras (single thread)

@@ -142,7 +142,7 @@ def draw_boxes(image, boxes_coord, nms_idx, scores, classes, labels, colors):
     return(image, text_all)
 
 
-def yolo_object_detection(pathname, net, confidence, threshold, labels, colors):
+def yolo_object_detection(image, net, confidence, threshold, labels, colors):
     """ Apply YOLO object detection on a image_file.
         image_filename : Input image file to read
         net : YOLO v3 network object
@@ -151,9 +151,6 @@ def yolo_object_detection(pathname, net, confidence, threshold, labels, colors):
         labels : Class labels specified in coco.names
         colors : Colors assigned to the classes
     """
-
-    image = cv2.imread(pathname)
-
     retval = []
 
     if image is not None:
@@ -199,7 +196,6 @@ def yolo_object_detection(pathname, net, confidence, threshold, labels, colors):
 
         # Draw boxes on the image
         image, text_list = draw_boxes(image, boxes_coord, nms_idx, scores, classes, labels, colors)
-        cv2.imwrite(pathname, image)
 
         retval_list = []   
         for i in nms_idx:

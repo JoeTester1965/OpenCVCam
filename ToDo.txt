@@ -4,7 +4,6 @@ reader_ready and writer_sent co-ord for each camera
 
 -> then add pipe for filename then shared memory for np array and remove sleep in rx!.
 
-https://www.instructables.com/Starting-and-Stopping-Python-Threads-With-Events-i/
 
 https://docs.python.org/3/library/multiprocessing.shared_memory.html
 
