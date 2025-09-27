@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 import shutil
 from PIL import Image
-from yolo_od_utils import yolo_object_detection
+from opencv_yolo import opencv_yolo_detection
 from datetime import datetime
 import paho.mqtt.client as mqtt
 from multiprocessing import shared_memory
@@ -87,7 +87,7 @@ class VideoStreamWidget(object):
                         for contour in contours:
                             x,y,w,h = cv2.boundingRect(contour)
                             # Colour contours grey
-                            cv2.rectangle(self.frame,(x,y),(x+w,y+h),(125,125,125),1)
+                            cv2.rectangle(self.frame,(x,y),(x+w,y+h),(125,125,125),3)
 
                     biggest_contour = None
                     combined_contour = None
@@ -112,11 +112,11 @@ class VideoStreamWidget(object):
                         x,y,w,h = combined_contour
                         # colour combined countours white
                         if int(self.motion_config['draw_contour_debug']):
-                            cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,255,255),1)
+                            cv2.rectangle(self.frame,(x,y),(x+w,y+h),(255,255,255),3)
                         if (((w * h) / self.image_pixels) * 100) > float(self.motion_config['minimum_motion_screen_percent']):
                              # colour significant objects red
                             if int(self.motion_config['draw_potentially_significant_motion_debug']):
-                                cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),1)
+                                cv2.rectangle(self.frame,(x,y),(x+w,y+h),(0,0,255),3)
                             logger.debug("%s : Significant motion at %d,%d:%d,%d", self.name, x,y,w,h)
                                     
                             if writer_flag[self.name].is_set() == False:
@@ -150,8 +150,6 @@ cameras = dict(config['cameras_detection'])
 motion_config=dict(config['motion']) 
 
 general_config=dict(config['general']) 
-
-inference_config=dict(config['inference-opencv']) 
 
 logfile = general_config['logfile']
 my_log_level_from_config = general_config['log_level']
@@ -198,15 +196,16 @@ for name,uri in cameras.items():
     writer_queue[name] = queue.Queue()
 
 
-coco_names_file = inference_config['classes']
-yolov3_weight_file = inference_config['weights']
-yolov3_config_file = inference_config['config']
-yolov3_confidence = float(inference_config['dnn_confidence'])
-yolov3_threshold = float(inference_config['dnn_threshold'])
-
-LABELS = open(coco_names_file).read().strip().split("\n")
-COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
-net = cv2.dnn.readNetFromDarknet(yolov3_config_file, yolov3_weight_file)
+if general_config['inference_type'] == 'inference-opencv':
+    inference_config=dict(config['inference-opencv']) 
+    coco_names_file = inference_config['classes']
+    yolov3_weight_file = inference_config['weights']
+    yolov3_config_file = inference_config['config']
+    yolov3_confidence = float(inference_config['yolo_confidence'])
+    yolov3_iou_threshold = float(inference_config['yolo_iou_threshold'])
+    LABELS = open(coco_names_file).read().strip().split("\n")
+    COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
+    net = cv2.dnn.readNetFromDarknet(yolov3_config_file, yolov3_weight_file)
 
 if config.has_section("mqtt"):
     mqtt_client = mqtt.Client()
@@ -229,13 +228,27 @@ while True:
         
         if writer_flag[camera_name].is_set() == True:
             logger.debug("Processing a frame for %s", camera_name) 
+
+            timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
+            dest_path = motion_config['detected_motion_directory'] + "/" + camera_name + "/" + timestamp +".jpg"
+            
             x,y,width,height = writer_queue[camera_name].get()
             image = writer_shared_memory[camera_name]
-           
-            retval = yolo_object_detection(image, net, yolov3_confidence, yolov3_threshold, LABELS, COLORS)
-        
+
             image_width, image_height, image_depth = image.shape
             motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
+
+            if general_config['inference_type'] == 'none':
+                logger.info("%s image saved because of motion detection at %s, no inference applied", camera_name, motion_box)
+                cv2.imwrite(dest_path, image)
+                writer_flag[camera_name].clear()
+                break
+            
+            retval = None
+
+            if general_config['inference_type'] == 'inference-opencv':
+                retval = opencv_yolo_detection(image, net, yolov3_confidence, yolov3_iou_threshold, LABELS, COLORS)
+    
             
             something_in_whitelist = []
 
@@ -253,7 +266,7 @@ while True:
                     if object in whitelist:
                         something_in_whitelist.append([object,confidence,box,motion_box])
                     if not in_blacklist:
-                        logger.debug("%s with confidence %.2f at %s, trigger %s", object, confidence, box, motion_box) 
+                        logger.debug("%s confidence %.2f at %s, trigger %s", object, confidence, box, motion_box) 
 
                 highest_confidence_object = {}         
                     
@@ -267,9 +280,6 @@ while True:
                             highest_confidence_index = index
 
                     highest_confidence_object = something_in_whitelist[highest_confidence_index] 
-
-                timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
-                dest_path = motion_config['detected_motion_directory'] + "/" + camera_name + "/" + timestamp +".jpg"
 
                 if len(highest_confidence_object) > 0:
                     if config.has_section("mqtt"):

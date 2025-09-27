@@ -2,10 +2,7 @@ import numpy as np
 import cv2
 
 def filter_outputs(layer_output, confidence):
-    """ Pick the most probable class in each box and then filter it by confidence.
-        layer_output : Output from a YOLO output layer
-        confidence : confidence threshold (float)
-    """
+
     box_xywh = np.array(layer_output[:, :4])
     box_confidence = np.array(layer_output[:, 4]).reshape(layer_output.shape[0], 1)
     box_class_probs = np.array(layer_output[:, 5:])
@@ -22,14 +19,9 @@ def filter_outputs(layer_output, confidence):
 
     return (xywh_filtered, score_filtered, class_filtered)
 
-def iou(box1, box2):
-    """ Caculate IoU between box1 and box2
-        box1/box2 : (x1, y1, x2, y2), where x1 and y1 are coordinates of upper left corner,
-                    x2 and y2 are of lower right corner
-        return: IoU
-    """
+def iou(box1, box2): # Calculate Itersection over Union
 
-    # get the area of intersection
+    # get the area of intersection, co-ords are top left and bottom right of boxes
     xi1 = max(box1[0], box2[0])
     yi1 = max(box1[1], box2[1])
     xi2 = min(box1[2], box2[2])
@@ -50,10 +42,10 @@ def iou(box1, box2):
 
 
 def yolo_non_max_supression(boxes, scores, confidence_threshold, iou_threshold):
-    """ Apply Non-max supression.
+    """ 
         boxes : Array of coordinates of boxes (x1, y1, x2, y2)
         scores : Array of confidence scores with respect to boxes
-        score_threshold : Threshold of the score to keep
+        confidence_threshold : Threshold of the score to keep
         iou_threshold : Threshold of IoU to keep
 
         Return : Indices of boxes and scores to be kept
@@ -142,12 +134,12 @@ def draw_boxes(image, boxes_coord, nms_idx, scores, classes, labels, colors):
     return(image, text_all)
 
 
-def yolo_object_detection(image, net, confidence, threshold, labels, colors):
+def opencv_yolo_detection(image, net, confidence, threshold, labels, colors):
     """ Apply YOLO object detection on a image_file.
-        image_filename : Input image file to read
+        image_filename : Input image numopy array
         net : YOLO v3 network object
-        confidence : Confidence threshold (specified in command line)
-        threshold : IoU threshold for NMS (specified in command line)
+        confidence : yoloy confidence threshold
+        threshold : Intersection over Union (IoU) threshold for Non Maximum Suppression (NMS)
         labels : Class labels specified in coco.names
         colors : Colors assigned to the classes
     """
@@ -171,7 +163,6 @@ def yolo_object_detection(image, net, confidence, threshold, labels, colors):
 
         # perform object detection
         layerOutputs = net.forward(ln_out)
-
 
         # Get the result from outputs, and filter them by confidence
         boxes = []
