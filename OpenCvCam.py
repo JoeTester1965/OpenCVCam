@@ -239,7 +239,7 @@ while True:
             motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
 
             if general_config['inference_type'] == 'none':
-                logger.info("%s image saved because of motion detection at %s, no inference applied", camera_name, motion_box)
+                logger.info("%s : motion detection at %s", camera_name, motion_box)
                 cv2.imwrite(dest_path, image)
                 writer_flag[camera_name].clear()
                 break
@@ -266,7 +266,7 @@ while True:
                     if object in whitelist:
                         something_in_whitelist.append([object,confidence,box,motion_box])
                     if not in_blacklist:
-                        logger.debug("%s confidence %.2f at %s, trigger %s", object, confidence, box, motion_box) 
+                        logger.debug("%s : %s confidence %.2f at %s, trigger %s", camera_name, object, confidence, box, motion_box) 
 
                 highest_confidence_object = {}         
                     
@@ -292,7 +292,7 @@ while True:
 
                         mqtt_client.publish(mqtt_config["mqtt_topic"], message) 
                                 
-                    logger.info("%s at %s highest confidence %.3f in whitelist at %s, motion trigger %s",
+                    logger.info("%s : %s confidence %.3f in whitelist at %s, motion trigger %s",
                                 camera_name,
                                 highest_confidence_object[0],
                                 highest_confidence_object[1],
