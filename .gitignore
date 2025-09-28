@@ -1,8 +1,6 @@
 logfile.txt
-config.txt
-myenv/
-masks/
-candidates/
+media/
 yolo/yolov3.weights
-detected_motion/
+__pycache__/
 *.pyc
+nohup.out

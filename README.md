@@ -14,16 +14,9 @@ sudo apt-get install python3-paho-mqtt python3-pill python3-opencv
 cd yoloo
 wget https://www.kaggle.com/datasets/shivam316/yolov3-weights
 cd ..
-python -m venv
-source venv/bin/activate
-pip install opencv-python ?
-pip install pillow ?
-pip install paho-mqtt ?
+chmod u+x *.sh
+./start.sh
 ```
-
-
-```
-source 
 
 
 
