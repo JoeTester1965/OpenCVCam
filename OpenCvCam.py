@@ -15,6 +15,7 @@ from opencv_yolo import opencv_yolo_detection
 from datetime import datetime
 import paho.mqtt.client as mqtt
 from multiprocessing import shared_memory
+import stat
 
 class VideoStreamWidget(object):
     def __init__(self, name, uri, motion_config):
@@ -145,11 +146,13 @@ if not os.path.isfile(sys.argv[1]):
 
 read_config(sys.argv[1]) 
  
-cameras = dict(config['cameras_detection']) 
+cameras_config = dict(config['cameras_detection']) 
 	
 motion_config=dict(config['motion']) 
 
 general_config=dict(config['general']) 
+
+recorded_video_config=dict(config['recorded_video']) 
 
 logfile = general_config['logfile']
 my_log_level_from_config = general_config['log_level']
@@ -184,17 +187,36 @@ writer_queue = {}
 writer_shared_memory = {}
 
 Path(motion_config['masks_directory']).mkdir(exist_ok=True)
-Path(motion_config['detected_motion_directory']).mkdir(exist_ok=True)
-for name,uri in cameras.items():
+Path(general_config['media_directory']).mkdir(exist_ok=True)
+Path(general_config['media_directory'] + "/detection").mkdir(exist_ok=True)
+Path(general_config['media_directory'] + "/video").mkdir(exist_ok=True)
+
+cron_hourly_file =  "cron_hourly.sh"
+
+with open(cron_hourly_file, "w") as f:
+    f.write("#!/bin/sh\n")
+
+for name,uri in cameras_config.items():
     writer_shared_memory[name] = shared_memory.SharedMemory(create=True, size= int(motion_config['max_image_object_size']))
     streams[name] = VideoStreamWidget(name, uri, motion_config)
     Path(motion_config['masks_directory'] + "/" + name).mkdir(exist_ok=True)
-    Path(motion_config['detected_motion_directory'] + "/" + name).mkdir(exist_ok=True)
+    Path(general_config['media_directory'] + "/detection/" + name).mkdir(exist_ok=True)
     
     writer_flag[name] = Event() 
-
     writer_queue[name] = queue.Queue()
+    
+for name,uri in recorded_video_config.items():
+    Path(general_config['media_directory'] + "/video/" + name).mkdir(exist_ok=True)
+    with open(cron_hourly_file, "a") as f:
+        line = "nohup ffmpeg -i '" + uri + "' -vcodec copy -t 3540 -y " + general_config['media_directory'] + "/video/" + name + "/$(date +\%Y\%m\%d\%H).mp4 > /dev/null 2>&1 < /dev/null &\n"
+        f.write(line)
 
+with open(cron_hourly_file, "a") as f:
+    line = "find " + general_config['media_directory'] + " -mtime " + general_config['days_media_stored'] + " -delete"
+    f.write(line)
+
+st = os.stat(cron_hourly_file)
+os.chmod(cron_hourly_file, st.st_mode | stat.S_IEXEC)
 
 if general_config['inference_type'] == 'inference-opencv':
     inference_config=dict(config['inference-opencv']) 
@@ -219,7 +241,7 @@ if config.has_section("mqtt"):
 
 while True:
     start_time = time.time()
-    for camera_name,uri in cameras.items():
+    for camera_name,uri in cameras_config.items():
         try:
             if int(general_config['display_video']) :
                 streams[camera_name].show_frame()
@@ -230,7 +252,7 @@ while True:
             logger.debug("Processing a frame for %s", camera_name) 
 
             timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
-            dest_path = motion_config['detected_motion_directory'] + "/" + camera_name + "/" + timestamp +".jpg"
+            dest_path = general_config['media_directory'] + "/detection/" + camera_name + "/" + timestamp +".jpg"
             
             x,y,width,height = writer_queue[camera_name].get()
             image = writer_shared_memory[camera_name]

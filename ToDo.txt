@@ -1,14 +1,5 @@
-One threaded app.
 
-reader_ready and writer_sent co-ord for each camera 
-
--> then add pipe for filename then shared memory for np array and remove sleep in rx!.
-
-
-https://docs.python.org/3/library/multiprocessing.shared_memory.html
-
-https://luis-sena.medium.com/sharing-big-numpy-arrays-across-python-processes-abf0dc2a0ab2
-
-https://superfastpython.com/numpy-share-array-processes/
-
-
+Camera up and down in class, timer for come up and attempt restart. 
+Log status of all cameras as well on restart timer. 
+In class init move bring out set of calls so can use cam up and down. 
+Test up with an initial drama before moving into is up state
