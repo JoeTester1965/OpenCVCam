@@ -1,5 +1,3 @@
+Test video up / down code 
 
-Camera up and down in class, timer for come up and attempt restart. 
-Log status of all cameras as well on restart timer. 
-In class init move bring out set of calls so can use cam up and down. 
-Test up with an initial drama before moving into is up state
+Hailo integration

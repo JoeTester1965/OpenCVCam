@@ -22,6 +22,7 @@ class VideoStreamWidget(object):
         self.name = name
         self.motion_config = motion_config
 
+        self.camera_up = False
         self.last_frame = None
         self.gray = None
         self.mask = None
@@ -30,15 +31,41 @@ class VideoStreamWidget(object):
         self.frame = None
         self.uri=uri
 
-        self.capture = cv2.VideoCapture(uri)
+        self.bring_up_camera()
 
         self.thread = Thread(target=self.update, args=())
         self.thread.daemon = True
         self.thread.start()
+    
+    def bring_up_camera(self):
+    
+        while self.camera_up == False:
+            try:
+                self.capture = cv2.VideoCapture(self.uri)
+                try:
+                    self.status, self.frame = self.capture.read() 
+                    self.camera_up = True
+                    logger.info("%s : Camera up", self.name)
+                except cv2.error as e:
+                    self.camera_up = False
+                    logger.error("%s : Capture error, camera down : %s", self.name, e)
+                    self.capture.release()
+                    self.sleep(60)
+
+            except cv2.error as e:
+                self.camera_up = False
+                logger.error("%s : Capture error, camera down : %s", self.name, e)
+                self.sleep(60)
 
     def update(self):
         while True:
-            self.status, self.frame = self.capture.read()
+            try:
+                self.status, self.frame = self.capture.read()
+            except cv2.error as e:
+                    self.camera_up = False
+                    logger.error("%s : Capture error, camera down : %s", self.name, e)
+                    self.capture.release()
+                    self.bring_up_camera()
             
             if self.status:
                 if float(self.motion_config['image_rescaling_factor']) != 1.0:

@@ -6,16 +6,16 @@ logfile = logfile.txt
 display_video = 0
 # inference-opencv | inference-hailo8l | none
 inference_type = none 
-media_directory = /home/pi/Documents/OpenCVCam/media
+media_directory = /media/pi/EEAF-38B3
 days_media_stored = 3
 
 [cameras_detection]
 
-#side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-#back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-#front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-#drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-test_video = file:/home/pi/Documents/test.m4v
+side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+#test_video = file:/home/pi/Documents/test.m4v
 
 [recorded_video]
 # 
