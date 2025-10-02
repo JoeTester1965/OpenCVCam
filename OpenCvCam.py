@@ -38,6 +38,8 @@ class VideoStreamWidget(object):
         self.thread.start()
     
     def bring_up_camera(self):
+
+        logger.info("%s : Bringing up camera", self.name)
     
         while self.camera_up == False:
             try:
@@ -45,16 +47,19 @@ class VideoStreamWidget(object):
                 try:
                     self.status, self.frame = self.capture.read() 
                     self.camera_up = True
-                    logger.info("%s : Camera up", self.name)
+                    logger.info("%s : VideoCapture up and running", self.name)
                 except cv2.error as e:
                     self.camera_up = False
-                    logger.error("%s : Capture error, camera down : %s", self.name, e)
-                    self.capture.release()
-                    self.sleep(60)
+                    logger.error("%s : VideoCapture read error : %s", self.name, e)
+                    try:
+                        self.capture.release()
+                    except:
+                        pass
+                    self.sleep(float(general_config['restart_camera_timeout_seconds']))
 
             except cv2.error as e:
                 self.camera_up = False
-                logger.error("%s : Capture error, camera down : %s", self.name, e)
+                logger.error("%s : VideoCapture open error : %s", self.name, e)
                 self.sleep(60)
 
     def update(self):
@@ -63,7 +68,7 @@ class VideoStreamWidget(object):
                 self.status, self.frame = self.capture.read()
             except cv2.error as e:
                     self.camera_up = False
-                    logger.error("%s : Capture error, camera down : %s", self.name, e)
+                    logger.error("%s : VideoCapture read error : %s", self.name, e)
                     self.capture.release()
                     self.bring_up_camera()
             
@@ -91,7 +96,7 @@ class VideoStreamWidget(object):
                         candidate_mask_template_name = f'{masks_directory}/{self.name}/mask.candidate.jpg'
                         cv2.imwrite(candidate_mask_template_name, self.frame)
                     
-                    logger.info("image object size for %s is %d", self.name, self.frame.size)
+                    logger.info("%s : image object size %d", self.name, self.frame.size)
 
                 else:    
 
@@ -296,9 +301,9 @@ while True:
             retval = None
 
             if general_config['inference_type'] == 'inference-opencv':
-                retval = opencv_yolo_detection(image, net, yolov3_confidence, yolov3_iou_threshold, LABELS, COLORS)
-    
-            
+                draw_boxes = int(general_config['draw_inference_boxes'])            
+                retval = opencv_yolo_detection(image, net, yolov3_confidence, yolov3_iou_threshold, LABELS, COLORS, draw_boxes)
+              
             something_in_whitelist = []
 
             if retval:

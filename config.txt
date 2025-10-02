@@ -5,9 +5,11 @@ log_level = INFO
 logfile = logfile.txt
 display_video = 0
 # inference-opencv | inference-hailo8l | none
-inference_type = none 
+inference_type = inference-opencv 
 media_directory = /media/pi/EEAF-38B3
 days_media_stored = 3
+restart_camera_timeout_seconds = 300
+draw_inference_boxes = 1
 
 [cameras_detection]
 
