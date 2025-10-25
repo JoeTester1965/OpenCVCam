@@ -6,3 +6,5 @@ __pycache__/
 nohup.out
 cron_hourly.sh
 masks/
+test.mp4
+venv
