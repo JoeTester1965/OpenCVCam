@@ -1,4 +1,9 @@
-e/pi/Documents/OpenCVCam/OpenCvCam.py:293: DeprecationWarning: Callback API version 1 is deprecated, update to latest version
+
+*** To Do ***
+
+0. Save logfile to media directory 
+
+1. /home/pi/Documents/OpenCVCam/OpenCvCam.py:293: DeprecationWarning: Callback API version 1 is deprecated, update to latest version
   mqtt_client = mqtt.Client()
 
 # OpenCVCam
@@ -8,6 +13,12 @@ Based on [CudaCamz](https://github.com/JoeTester1965/CudaCamz)
 # Installation
 
 Tested on Debian 1:6.12.34-1+rpt1~bookworm (2025-06-26) aarch64 GNU/Linux
+
+# Notes for later
+
+only creates new cron file if not exists
+
+if inferenece type none saves images from motion detect
 
 
 ```console
