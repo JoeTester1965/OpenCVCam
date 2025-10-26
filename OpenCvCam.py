@@ -272,12 +272,7 @@ if general_config['inference_type'] == 'inference-degirum-hailo':
     model_name = inference_config['model_name']
     model_width = int(inference_config['model_width'])
     model_height = int(inference_config['model_height'])
-    
-    #device_type = "HAILORT/HAILO8L"
-    #inference_host_address = "@local"
-    #zoo_url = "degirum/hailo"
-    #token = ""
-    #model_name = "yolov8n_coco--640x640_quant_hailort_multidevice_1"
+    model_confidence = float(inference_config['model_confidence'])
     
     try:
         model = dg.load_model(  model_name=model_name,
@@ -328,21 +323,19 @@ while True:
             
             retval = None
 
-            if general_config['inference_type'] == 'inference-opencv':
-                draw_boxes = int(general_config['draw_inference_boxes'])            
-                retval = opencv_yolo_detection(image, net, yolov3_confidence, yolov3_iou_threshold, LABELS, COLORS, draw_boxes)
+            draw_inference_boxes = int(general_config['draw_inference_boxes']) 
+
+            if general_config['inference_type'] == 'inference-opencv':           
+                retval = opencv_yolo_detection(image, net, yolov3_confidence, yolov3_iou_threshold, LABELS, COLORS)
 
             if general_config['inference_type'] == 'inference-degirum-hailo':
                 retval_list = [] 
                 image_height, image_width = image.shape[:2]
-                inference_result = model(image)  # *** trying image not image source*** #
+                inference_result = model(image)  
                 for result in inference_result.results:
-                    result_row = result['label'],np.float32(result['score']), np.floor(result['bbox']).astype(int)
-                    retval_list.append(result_row)
-                    pass
-                #
-                # Then draw boxes if in config then move all this to helper file!
-                #
+                    if np.float32(result['score']) > model_confidence:
+                        result_row = result['label'],np.float32(result['score']), np.floor(result['bbox']).astype(int)
+                        retval_list.append(result_row)
                 retval = retval_list 
                 
             something_in_whitelist = []
@@ -362,6 +355,25 @@ while True:
                         something_in_whitelist.append([object,confidence,box,motion_box])
                     if not in_blacklist:
                         logger.debug("%s : %s confidence %.2f at %s, trigger %s", camera_name, object, confidence, box, motion_box) 
+
+                    #
+                    # Then draw boxes here and not in helper file and change opencv_yolo_detection above
+                    #
+                    if draw_inference_boxes:
+                        pt1_x = box[0]
+                        pt1_y = box[1]
+                        pt2_x = box[2]
+                        pt2_y = box[3]
+
+                        cv2.rectangle(image, (pt1_x, pt1_y), (pt2_x, pt2_y), (255,0,0), 2)
+                        text = str(object) + ":" + str(round(confidence,2))                        
+                        (t_w, t_h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, fontScale=1.0, thickness=1)
+                        text_offset_x = 7
+                        text_offset_y = 7
+                        (text_box_x1, text_box_y1) = (pt1_x, pt1_y - (t_h + text_offset_y))
+                        (test_box_x2, text_box_y2) = ((pt1_x + t_w + text_offset_x), pt1_y)
+                        cv2.rectangle(image, (text_box_x1, text_box_y1), (test_box_x2, text_box_y2), (100,100,100), cv2.FILLED)
+                        cv2.putText(image, text, (pt1_x + text_offset_x, pt1_y - 5), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 1)
 
                 highest_confidence_object = {}         
                     

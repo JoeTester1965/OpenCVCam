@@ -103,38 +103,7 @@ def rescale_box_coord(boxes, width, height):
 
     return boxes_coord
 
-def draw_boxes(image, boxes_coord, nms_idx, scores, classes, labels, colors):
-
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 0.5
-    border_thickness = 2
-    text_thickness = 1
-
-    text_all = []
-    for i in nms_idx:
-        color = tuple([int(c) for c in colors[classes[i]]])
-        text = "{}: {:.4f}".format(labels[classes[i]], scores[i])
-        text_all.append(text)
-
-        (pt1_x, pt1_y) = (int(boxes_coord[i, 0]), int(boxes_coord[i, 1]))
-        (pt2_x, pt2_y) = (int(boxes_coord[i, 2]), int(boxes_coord[i, 3]))
-        cv2.rectangle(image, (pt1_x, pt1_y), (pt2_x, pt2_y), color, border_thickness)
-
-        (t_w, t_h), _ = cv2.getTextSize(text, font, fontScale=font_scale, thickness=text_thickness)
-        text_offset_x = 7
-        text_offset_y = 7
-        (text_box_x1, text_box_y1) = (pt1_x, pt1_y - (t_h + text_offset_y))
-        (test_box_x2, text_box_y2) = ((pt1_x + t_w + text_offset_x), pt1_y)
-
-        cv2.rectangle(image, (text_box_x1, text_box_y1), (test_box_x2, text_box_y2), color, cv2.FILLED)
-
-        cv2.putText(image, text, (pt1_x + text_offset_x, pt1_y - 5), cv2.FONT_HERSHEY_SIMPLEX, font_scale,
-                                    (255, 255, 255), text_thickness)
-
-    return(image, text_all)
-
-
-def opencv_yolo_detection(image, net, confidence, threshold, labels, colors, draw_boxes_debug):
+def opencv_yolo_detection(image, net, confidence, threshold, labels, colors):
     """ Apply YOLO object detection on a image_file.
         image_filename : Input image numopy array
         net : YOLO v3 network object
@@ -180,9 +149,6 @@ def opencv_yolo_detection(image, net, confidence, threshold, labels, colors, dra
         retval_list = []   
 
         if len(nms_idx) > 0:
-            if draw_boxes_debug == True:
-                image, text_list = draw_boxes(image, boxes_coord, nms_idx, scores, classes, labels, colors)
-
     
             for i in nms_idx:
                 retval  = labels[classes[i]], scores[i], np.floor(boxes_coord[i]).astype(int)

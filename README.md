@@ -1,3 +1,6 @@
+e/pi/Documents/OpenCVCam/OpenCvCam.py:293: DeprecationWarning: Callback API version 1 is deprecated, update to latest version
+  mqtt_client = mqtt.Client()
+
 # OpenCVCam
 
 Based on [CudaCamz](https://github.com/JoeTester1965/CudaCamz)

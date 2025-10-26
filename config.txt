@@ -60,6 +60,7 @@ whitelist=person,bird,cat,dog,bench
 device_type = HAILORT/HAILO8L
 inference_host_address = @local
 zoo_url = degirum/hailo
+model_confidence = 0.4
 token = 
 model_name = yolov8n_coco--640x640_quant_hailort_multidevice_1
 model_width = 640
