@@ -4,9 +4,10 @@
 log_level = INFO
 logfile = logfile.txt
 display_video = 0
-# inference-opencv | inference-hailo8l | none
-inference_type = inference-opencv 
-media_directory = /media/pi/EEAF-38B3
+# inference_type = inference-opencv | inference-degirum-hailo | none
+inference_type = inference-degirum-hailo
+#media_directory = /media/pi/EEAF-38B3
+media_directory = media
 days_media_stored = 3
 restart_camera_timeout_seconds = 300
 draw_inference_boxes = 1
@@ -17,8 +18,8 @@ draw_inference_boxes = 1
 #back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
 #front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
 #drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-sannce = rtsp://admin:2540cdt@192.168.1.17:554/H264/ch1/sub/av_stream
-#test_video = file:/home/pi/Documents/test.m4v
+#sannce = rtsp://admin:2540cdt@192.168.1.17:554/H264/ch1/sub/av_stream
+test_video = file:/home/pi/Documents/OpenCVCam/test.mp4
 
 [recorded_video]
 # 
@@ -52,6 +53,17 @@ weights=yolo/yolov3.weights
 classes=yolo/coco.names
 yolo_confidence=0.4
 yolo_iou_threshold=0.3
+blacklist=toilet,tv
+whitelist=person,bird,cat,dog,bench
+
+[inference-degirum-hailo]
+device_type = HAILORT/HAILO8L
+inference_host_address = @local
+zoo_url = degirum/hailo
+token = 
+model_name = yolov8n_coco--640x640_quant_hailort_multidevice_1
+model_width = 640
+model_height = 640
 blacklist=toilet,tv
 whitelist=person,bird,cat,dog,bench
 

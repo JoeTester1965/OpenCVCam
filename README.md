@@ -18,7 +18,13 @@ chmod u+x *.sh
 ./start.sh
 ```
 
+Hailo
 
+install https://github.com/DeGirum/hailo_examples
+source ../hailo_examples/degirum_env/bin/activate
+pip3 install paho-mqtt
+
+CTRL SHIFT P : Python Select Interpteter ../hailo/examples/degirum_env/bin/python3.11    
 
 # Configuration file
 

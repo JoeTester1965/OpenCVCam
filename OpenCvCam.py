@@ -16,6 +16,8 @@ from datetime import datetime
 import paho.mqtt.client as mqtt
 from multiprocessing import shared_memory
 import stat
+import degirum as dg
+import math
 
 class VideoStreamWidget(object):
     def __init__(self, name, uri, motion_config):
@@ -261,6 +263,32 @@ if general_config['inference_type'] == 'inference-opencv':
     COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
     net = cv2.dnn.readNetFromDarknet(yolov3_config_file, yolov3_weight_file)
 
+if general_config['inference_type'] == 'inference-degirum-hailo':
+    inference_config=dict(config['inference-degirum-hailo'])
+    device_type = inference_config['device_type']
+    inference_host_address = inference_config['inference_host_address']
+    zoo_url = inference_config['zoo_url']
+    token = inference_config['token']
+    model_name = inference_config['model_name']
+    model_width = int(inference_config['model_width'])
+    model_height = int(inference_config['model_height'])
+    
+    #device_type = "HAILORT/HAILO8L"
+    #inference_host_address = "@local"
+    #zoo_url = "degirum/hailo"
+    #token = ""
+    #model_name = "yolov8n_coco--640x640_quant_hailort_multidevice_1"
+    
+    try:
+        model = dg.load_model(  model_name=model_name,
+                                inference_host_address=inference_host_address,
+                                zoo_url=zoo_url,
+                                token=token,
+                                device_type=device_type)
+    except Exception as e:
+        print(f"Error loading model '{model_name}': {e}")
+        sys.exit(1)
+
 if config.has_section("mqtt"):
     mqtt_client = mqtt.Client()
     mqtt_config = config['mqtt']
@@ -303,7 +331,20 @@ while True:
             if general_config['inference_type'] == 'inference-opencv':
                 draw_boxes = int(general_config['draw_inference_boxes'])            
                 retval = opencv_yolo_detection(image, net, yolov3_confidence, yolov3_iou_threshold, LABELS, COLORS, draw_boxes)
-              
+
+            if general_config['inference_type'] == 'inference-degirum-hailo':
+                retval_list = [] 
+                image_height, image_width = image.shape[:2]
+                inference_result = model(image)  # *** trying image not image source*** #
+                for result in inference_result.results:
+                    result_row = result['label'],np.float32(result['score']), np.floor(result['bbox']).astype(int)
+                    retval_list.append(result_row)
+                    pass
+                #
+                # Then draw boxes if in config then move all this to helper file!
+                #
+                retval = retval_list 
+                
             something_in_whitelist = []
 
             if retval:
