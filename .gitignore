@@ -8,3 +8,4 @@ cron_hourly.sh
 masks/
 test.mp4
 venv
+hailort.log
