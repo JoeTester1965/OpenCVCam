@@ -278,7 +278,6 @@ if general_config['inference_type'] == 'inference-degirum-hailo':
         model = dg.load_model(  model_name=model_name,
                                 inference_host_address=inference_host_address,
                                 zoo_url=zoo_url,
-                                token=token,
                                 device_type=device_type)
     except Exception as e:
         print(f"Error loading model '{model_name}': {e}")

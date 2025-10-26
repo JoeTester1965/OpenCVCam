@@ -6,8 +6,7 @@ logfile = logfile.txt
 display_video = 0
 # inference_type = inference-opencv | inference-degirum-hailo | none
 inference_type = inference-degirum-hailo
-#media_directory = /media/pi/EEAF-38B3
-media_directory = media
+media_directory = /media/pi/opencvcam
 days_media_stored = 3
 restart_camera_timeout_seconds = 300
 draw_inference_boxes = 1
@@ -26,10 +25,10 @@ test_video = file:/home/pi/Documents/OpenCVCam/test.mp4
 # Run cron_hourly.sh produced here in cron
 #
 
-#side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
-#back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
-#front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
-#drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
+side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
+back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
+front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
+drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=0.sdp
 sannce = rtsp://admin:2540cdt@192.168.1.17:554/H264/ch1/main/av_stream
 
 [motion]
@@ -45,7 +44,7 @@ motion_contours_to_consider = 10
 contour_combine_distance = 50
 draw_contour_debug = 0
 draw_potentially_significant_motion_debug = 0
-masks_directory = /home/pi/Documents/OpenCVCam/masks
+masks_directory = /media/pi/opencvcam/masks
 
 [inference-opencv]
 config=yolo/yolov3.cfg
@@ -59,7 +58,7 @@ whitelist=person,bird,cat,dog,bench
 [inference-degirum-hailo]
 device_type = HAILORT/HAILO8L
 inference_host_address = @local
-zoo_url = degirum/hailo
+zoo_url = ../hailo_examples/models
 model_confidence = 0.4
 token = 
 model_name = yolov8n_coco--640x640_quant_hailort_multidevice_1
