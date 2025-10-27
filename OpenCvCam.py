@@ -359,13 +359,13 @@ while True:
 
                         cv2.rectangle(image, (pt1_x, pt1_y), (pt2_x, pt2_y), (255,0,0), 2)
                         text = str(object) + ":" + str(round(confidence,2))                        
-                        (t_w, t_h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, fontScale=1.0, thickness=1)
+                        (t_w, t_h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, thickness=1)
                         text_offset_x = 7
                         text_offset_y = 7
                         (text_box_x1, text_box_y1) = (pt1_x, pt1_y - (t_h + text_offset_y))
                         (test_box_x2, text_box_y2) = ((pt1_x + t_w + text_offset_x), pt1_y)
                         cv2.rectangle(image, (text_box_x1, text_box_y1), (test_box_x2, text_box_y2), (100,100,100), cv2.FILLED)
-                        cv2.putText(image, text, (pt1_x + text_offset_x, pt1_y - 5), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 1)
+                        cv2.putText(image, text, (pt1_x + text_offset_x, pt1_y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
                 highest_confidence_object = {}         
                     
