@@ -1,6 +1,121 @@
 import numpy as np
 import cv2
 
+def hailo_yolo_detection(image, model, model_confidence):
+                
+    rescaled_image, scale, pad_top, pad_left = resize_with_letterbox(image, model.input_shape[0])
+    retval_list = [] 
+    inference_result = model(rescaled_image[0])  
+    scaled_inference_results = reverse_rescale_bboxes(inference_result.results, scale, pad_top, pad_left,image.shape[:2])
+    for result in scaled_inference_results:
+        if np.float32(result['score']) > model_confidence:
+            result_row = result['label'],np.float32(result['score']), np.floor(result['bbox']).astype(int)
+            retval_list.append(result_row)
+    return retval_list
+
+def resize_with_letterbox(image, target_shape, padding_value=(0, 0, 0)):
+    """
+    Resizes an image with letterboxing to fit the target size, preserving aspect ratio.
+    
+    Parameters:
+        image_path (str): Path to the input image.
+        target_shape (tuple): Target shape in NHWC format (batch_size, target_height, target_width, channels).
+        padding_value (tuple): RGB values for padding (default is black padding).
+        
+    Returns:
+        letterboxed_image (ndarray): The resized image with letterboxing.
+        scale (float): Scaling ratio applied to the original image.
+        pad_top (int): Padding applied to the top.
+        pad_left (int): Padding applied to the left.
+    """
+    
+    # Convert the image from BGR to RGB
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    
+    # Get the original image dimensions (height, width, channels)
+    h, w, c = image.shape
+    
+    # Extract target height and width from target_shape (NHWC format)
+    target_height, target_width = target_shape[1], target_shape[2]
+    
+    # Calculate the scaling factors for width and height
+    scale_x = target_width / w
+    scale_y = target_height / h
+    
+    # Choose the smaller scale factor to preserve the aspect ratio
+    scale = min(scale_x, scale_y)
+    
+    # Calculate the new dimensions based on the scaling factor
+    new_w = int(w * scale)
+    new_h = int(h * scale)
+
+    # Resize the image to the new dimensions
+    resized_image = cv2.resize(image, (new_w, new_h),interpolation=cv2.INTER_LINEAR)
+    
+    # Create a new image with the target size, filled with the padding value
+    letterboxed_image = np.full((target_height, target_width, c), padding_value, dtype=np.uint8)
+    
+    # Compute the position where the resized image should be placed (padding)
+    pad_top = (target_height - new_h) // 2
+    pad_left = (target_width - new_w) // 2
+    
+    # Place the resized image onto the letterbox background
+    letterboxed_image[pad_top:pad_top+new_h, pad_left:pad_left+new_w] = resized_image
+
+    final_image = np.expand_dims(letterboxed_image, axis=0)
+    
+    # Return the letterboxed image, scaling ratio, and padding (top, left)
+    return final_image, scale, pad_top, pad_left
+
+def reverse_rescale_bboxes(annotations, scale, pad_top, pad_left, original_shape):
+    """
+    Reverse rescales bounding boxes from the letterbox image to the original image, returning new annotations.
+
+    Parameters:
+        annotations (list of dicts): List of dictionaries, each containing a 'bbox' (x1, y1, x2, y2) and other fields.
+        scale (float): The scale factor used for resizing the image.
+        pad_top (int): The padding added to the top of the image.
+        pad_left (int): The padding added to the left of the image.
+        original_shape (tuple): The shape (height, width) of the original image before resizing.
+
+    Returns:
+        new_annotations (list of dicts): New annotations with rescaled bounding boxes adjusted back to the original image.
+    """
+    orig_h, orig_w = original_shape  # original image height and width
+    
+    new_annotations = []
+    
+    for annotation in annotations:
+        bbox = annotation['bbox']  # Bounding box as (x1, y1, x2, y2)
+        
+        # Reverse padding
+        x1, y1, x2, y2 = bbox
+        x1 -= pad_left
+        y1 -= pad_top
+        x2 -= pad_left
+        y2 -= pad_top
+        
+        # Reverse scaling
+        x1 = int(x1 / scale)
+        y1 = int(y1 / scale)
+        x2 = int(x2 / scale)
+        y2 = int(y2 / scale)
+        
+        # Clip the bounding box to make sure it fits within the original image dimensions
+        x1 = max(0, min(x1, orig_w))
+        y1 = max(0, min(y1, orig_h))
+        x2 = max(0, min(x2, orig_w))
+        y2 = max(0, min(y2, orig_h))
+        
+        # Create a new annotation with the rescaled bounding box and the original label
+        new_annotation = annotation.copy()
+        new_annotation['bbox'] = (x1, y1, x2, y2)
+        
+        # Append the new annotation to the list
+        new_annotations.append(new_annotation)
+    
+    return new_annotations
+
 def filter_outputs(layer_output, confidence):
 
     box_xywh = np.array(layer_output[:, :4])
@@ -103,7 +218,7 @@ def rescale_box_coord(boxes, width, height):
 
     return boxes_coord
 
-def opencv_yolo_detection(image, net, confidence, threshold, labels, colors):
+def opencv_yolo_detection(image, net, confidence, threshold, labels, model_width, model_height):
     """ Apply YOLO object detection on a image_file.
         image_filename : Input image numopy array
         net : YOLO v3 network object
@@ -118,7 +233,7 @@ def opencv_yolo_detection(image, net, confidence, threshold, labels, colors):
 
         (H, W) = image.shape[:2]
 
-        blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (416, 416), swapRB=True, crop=False)
+        blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (model_width, model_height), swapRB=True, crop=False)
 
         net.setInput(blob)
 

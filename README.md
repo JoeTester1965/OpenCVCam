@@ -1,11 +1,6 @@
 
 *** To Do ***
 
-0. Save logfile to media directory 
-
-1. /home/pi/Documents/OpenCVCam/OpenCvCam.py:293: DeprecationWarning: Callback API version 1 is deprecated, update to latest version
-  mqtt_client = mqtt.Client()
-
 # OpenCVCam
 
 Based on [CudaCamz](https://github.com/JoeTester1965/CudaCamz)
@@ -19,6 +14,8 @@ Tested on Debian 1:6.12.34-1+rpt1~bookworm (2025-06-26) aarch64 GNU/Linux
 only creates new cron file if not exists
 
 if inferenece type none saves images from motion detect
+
+disabled service, single process only but quicke n pi appartently: sudo systemctl stop hailort
 
 
 ```console

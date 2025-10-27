@@ -11,7 +11,8 @@ import os
 from pathlib import Path
 import shutil
 from PIL import Image
-from opencv_yolo import opencv_yolo_detection
+from helpers import opencv_yolo_detection
+from helpers import hailo_yolo_detection
 from datetime import datetime
 import paho.mqtt.client as mqtt
 from multiprocessing import shared_memory
@@ -75,9 +76,6 @@ class VideoStreamWidget(object):
                     self.bring_up_camera()
             
             if self.status:
-                if float(self.motion_config['image_rescaling_factor']) != 1.0:
-                    self.frame = cv2.resize(self.frame, (0, 0), 
-                        fx = float(motion_config['image_rescaling_factor']), fy = float(self.motion_config['image_rescaling_factor']), interpolation = cv2.INTER_LINEAR)
                 if self.last_frame is None:
                     self.last_frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
                     self.last_frame = cv2.GaussianBlur(self.last_frame, (int(self.motion_config['gaussian_kernel_size']),int(self.motion_config['gaussian_kernel_size'])), 0)
@@ -222,7 +220,8 @@ writer_shared_memory = {}
 
 Path(motion_config['masks_directory']).mkdir(exist_ok=True)
 Path(general_config['media_directory']).mkdir(exist_ok=True)
-Path(general_config['media_directory'] + "/detection").mkdir(exist_ok=True)
+Path(general_config['media_directory'] + "/inference").mkdir(exist_ok=True)
+Path(general_config['media_directory'] + "/motion").mkdir(exist_ok=True)
 Path(general_config['media_directory'] + "/video").mkdir(exist_ok=True)
 
 cron_hourly_file =  "cron_hourly.sh"
@@ -234,7 +233,8 @@ for name,uri in cameras_config.items():
     writer_shared_memory[name] = shared_memory.SharedMemory(create=True, size= int(motion_config['max_image_object_size']))
     streams[name] = VideoStreamWidget(name, uri, motion_config)
     Path(motion_config['masks_directory'] + "/" + name).mkdir(exist_ok=True)
-    Path(general_config['media_directory'] + "/detection/" + name).mkdir(exist_ok=True)
+    Path(general_config['media_directory'] + "/inference/" + name).mkdir(exist_ok=True)
+    Path(general_config['media_directory'] + "/motion/" + name).mkdir(exist_ok=True)
     
     writer_flag[name] = Event() 
     writer_queue[name] = queue.Queue()
@@ -260,8 +260,9 @@ if general_config['inference_type'] == 'inference-opencv':
     yolov3_confidence = float(inference_config['yolo_confidence'])
     yolov3_iou_threshold = float(inference_config['yolo_iou_threshold'])
     LABELS = open(coco_names_file).read().strip().split("\n")
-    COLORS = np.random.randint(0, 255, size=(len(LABELS), 3), dtype="uint8")
     net = cv2.dnn.readNetFromDarknet(yolov3_config_file, yolov3_weight_file)
+    model_width = int(inference_config['model_width'])
+    model_height = int(inference_config['model_height'])
 
 if general_config['inference_type'] == 'inference-degirum-hailo':
     inference_config=dict(config['inference-degirum-hailo'])
@@ -284,7 +285,7 @@ if general_config['inference_type'] == 'inference-degirum-hailo':
         sys.exit(1)
 
 if config.has_section("mqtt"):
-    mqtt_client = mqtt.Client()
+    mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     mqtt_config = config['mqtt']
     mqtt_client.username_pw_set(mqtt_config["mqtt_username"], mqtt_config["mqtt_password"])
     try:
@@ -306,7 +307,6 @@ while True:
             logger.debug("Processing a frame for %s", camera_name) 
 
             timestamp = datetime.now().strftime("%d-%m-%Y-%H-%M-%S-%f")
-            dest_path = general_config['media_directory'] + "/detection/" + camera_name + "/" + timestamp +".jpg"
             
             x,y,width,height = writer_queue[camera_name].get()
             image = writer_shared_memory[camera_name]
@@ -314,28 +314,21 @@ while True:
             image_width, image_height, image_depth = image.shape
             motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
 
-            if general_config['inference_type'] == 'none':
+            if (int(motion_config['draw_contour_debug']) == True) or (int(motion_config['draw_potentially_significant_motion_debug']) == True):
                 logger.info("%s : motion detection at %s", camera_name, motion_box)
+                dest_path = general_config['media_directory'] + "/motion/" + camera_name + "/" + timestamp +".jpg"
                 cv2.imwrite(dest_path, image)
                 writer_flag[camera_name].clear()
-                break
             
             retval = None
 
             draw_inference_boxes = int(general_config['draw_inference_boxes']) 
 
-            if general_config['inference_type'] == 'inference-opencv':           
-                retval = opencv_yolo_detection(image, net, yolov3_confidence, yolov3_iou_threshold, LABELS, COLORS)
+            if general_config['inference_type'] == 'inference-opencv':        
+                retval = opencv_yolo_detection(image, net, yolov3_confidence, yolov3_iou_threshold, LABELS, model_width, model_height)
 
             if general_config['inference_type'] == 'inference-degirum-hailo':
-                retval_list = [] 
-                image_height, image_width = image.shape[:2]
-                inference_result = model(image)  
-                for result in inference_result.results:
-                    if np.float32(result['score']) > model_confidence:
-                        result_row = result['label'],np.float32(result['score']), np.floor(result['bbox']).astype(int)
-                        retval_list.append(result_row)
-                retval = retval_list 
+                retval = hailo_yolo_detection(image, model, model_confidence)
                 
             something_in_whitelist = []
 
@@ -404,6 +397,7 @@ while True:
                                 highest_confidence_object[1],
                                 highest_confidence_object[2],
                                 highest_confidence_object[3],)
+                    dest_path = general_config['media_directory'] + "/inference/" + camera_name + "/" + timestamp +".jpg"
                     cv2.imwrite(dest_path, image)
 
             
@@ -411,7 +405,7 @@ while True:
             writer_flag[camera_name].clear()
 
     # sleep well within framerate over all cameras (single thread)
-    time.sleep(1/float(motion_config['fps'])/10.0)
+    time.sleep(1/float(motion_config['fps'])/50.0)
     end_time = time.time()
     delta_time = end_time - start_time
     target_time = 1.0/float(motion_config['fps'])

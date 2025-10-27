@@ -2,7 +2,7 @@
 
 # DEBUG,INFO,WARNING,ERROR
 log_level = INFO
-logfile = logfile.txt
+logfile = /media/pi/opencvcam/logfile.txt
 display_video = 0
 # inference_type = inference-opencv | inference-degirum-hailo | none
 inference_type = inference-degirum-hailo
@@ -34,7 +34,6 @@ sannce = rtsp://admin:2540cdt@192.168.1.17:554/H264/ch1/main/av_stream
 [motion]
 
 max_image_object_size = 2764800
-image_rescaling_factor = 1.0
 gaussian_kernel_size = 11
 pixel_delta_threshold = 25
 delta_frame_opening = 5
@@ -52,6 +51,8 @@ weights=yolo/yolov3.weights
 classes=yolo/coco.names
 yolo_confidence=0.4
 yolo_iou_threshold=0.3
+model_width = 416
+model_height = 416
 blacklist=toilet,tv
 whitelist=person,bird,cat,dog,bench
 
