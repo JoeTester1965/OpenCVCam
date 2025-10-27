@@ -1,6 +1,8 @@
 # OpenCVCam
 
-Monitor multiple cameras using opencv and optionally hailo AI accelerator
+Record multiple cameras and events using ffmpeg and opencv with motion and optionally hailo AI accelerator for object detection.
+
+My Pi5 and Hailo-8L is sailing along with five cameras operational at home.
 
 # Installation
 
