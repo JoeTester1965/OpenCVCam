@@ -384,10 +384,7 @@ while True:
                     if config.has_section("mqtt"):
                         mqtt_config = config['mqtt']
 
-                        x = round(((box[0] + box[2])/2)/image_width,2)
-                        y = round(((box[1] + box[3])/2)/image_height,2)
-
-                        message = camera_name + ":" + highest_confidence_object[0] + ":" + str(x) + " " + str(y)
+                        message = camera_name + ":" + highest_confidence_object[0]
 
                         mqtt_client.publish(mqtt_config["mqtt_topic"], message) 
 

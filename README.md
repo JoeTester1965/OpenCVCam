@@ -28,7 +28,8 @@ chmod u+x *.sh
 
 # Output directory structure
 
-| Key | Notes |
+| key | notes |
+| --------- |:-------|
 | inference  | Contains images where have beem inference hits (cat, person etc) from each camera. |
 | mask  | Motion detection masks for each camera. copy to mask.jpg then colour areas white to keep and black to mask out  |
 | motion  | Contains images where motion has been detected from each camera. |
@@ -40,13 +41,44 @@ Adapt this to your own needs
 
 *general*
 | Name | Notes |
-| TBD  | TBD |
-| TBD  | TBD |
-| TBD  | TBD |
+| --------- |:-------|
+| Self explanatory | See example file |
 
 *cameras_detection*
+| Name | Notes |
+| --------- |:-------|
+| Self explanatory  | See example file |
 
 *recorded_video*
+| Name | Notes |
+| --------- |:-------|
+| Self explanatory | See example file |
+
+*motion*
+| Name | Notes |
+| --------- |:-------|
+| Mostly self explanatory up to max_image_object_size | See example file, leave rest alone, took time to tune. |
+
+*inference-opencv*
+| Name | Notes |
+| --------- |:-------|
+| Mostly self explanatory | Blacklisted detections are totally ignored and whitelisted detections can be saved to file via save_inference_whitelist_images and also a message sent to MQTT server |
+
+*inference-degirum-hailo*
+| Name | Notes |
+| --------- |:-------|
+| Mostly self explanatory  | Ditto as above |
+
+*mqtt*
+| Name | Notes |
+| --------- |:-------|
+| Self explanatory | See example file |
+
+Will notify of highest confidence whitelisted event in a camera frame, example message sent being:
+
+```console
+test_video:person:
+```
 
 # Starting and stopping
 
@@ -56,6 +88,18 @@ bash ./start.sh
 
 ```console
 bash ./stop.sh
+```
+
+Note: If using hailo, you will need to edit *start.sh* and add **source** to hailo env e.g.
+
+```console
+#!/bin/bash
+
+source ../hailo_examples/degirum_env/bin/activate
+
+nohup bash ./stop.sh &> /dev/null
+
+nohup python3 OpenCvCam.py config.txt  2>/dev/null &
 ```
 
 # Recording video
@@ -76,7 +120,6 @@ If only using this for hailo AI accelerator then disable hailo sharing service f
 ```console
 sudo service hailort stop
 sudo systemctl mask hailort
-```
 ```
 
 
