@@ -156,9 +156,9 @@ class VideoStreamWidget(object):
                                 writer_flag[self.name].set()
                                 writer_queue[self.name].put([x,y,w,h])
                                 writer_shared_memory[self.name] = self.frame
-                                pass
+                                logger.debug("%s : Not blocked processing significant motion at %d,%d:%d,%d", self.name, x,y,w,h) 
                             else:
-                                logger.info("%s : Blocked processing significant motion at %d,%d:%d,%d", self.name, x,y,w,h)  
+                                logger.debug("%s : Blocked processing significant motion at %d,%d:%d,%d", self.name, x,y,w,h)  
     
     def show_frame(self):
         try:
@@ -399,13 +399,11 @@ while True:
                                 highest_confidence_object[3],)
                     dest_path = general_config['media_directory'] + "/inference/" + camera_name + "/" + timestamp +".jpg"
                     cv2.imwrite(dest_path, image)
-
             
             logger.debug("Procesesed a frame for %s", camera_name) 
             writer_flag[camera_name].clear()
 
-    # sleep well within framerate over all cameras (single thread)
-    time.sleep(1/float(motion_config['fps'])/50.0)
+    time.sleep(0.0001)
     end_time = time.time()
     delta_time = end_time - start_time
     target_time = 1.0/float(motion_config['fps'])

@@ -13,12 +13,12 @@ draw_inference_boxes = 1
 
 [cameras_detection]
 
-#side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-#back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-#front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-#drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
-#sannce = rtsp://admin:2540cdt@192.168.1.17:554/H264/ch1/sub/av_stream
-test_video = file:/home/pi/Documents/OpenCVCam/test.mp4
+side_alley = rtsp://192.168.1.12:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+back_garden = rtsp://192.168.1.16:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+front_garden = rtsp://192.168.1.15:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+drive = rtsp://192.168.1.14:554/user=admin&password=2540cdt&channel=1&stream=1.sdp
+sannce = rtsp://admin:2540cdt@192.168.1.17:554/H264/ch1/sub/av_stream
+#test_video = file:/home/pi/Documents/OpenCVCam/test.mp4
 
 [recorded_video]
 # 
