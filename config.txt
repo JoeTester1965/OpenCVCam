@@ -9,7 +9,9 @@ inference_type = inference-degirum-hailo
 media_directory = /media/pi/opencvcam
 days_media_stored = 3
 restart_camera_timeout_seconds = 300
+save_motion_images = 1
 draw_inference_boxes = 1
+save_inference_whitelist_images = 1
 
 [cameras_detection]
 
@@ -33,7 +35,7 @@ sannce = rtsp://admin:2540cdt@192.168.1.17:554/H264/ch1/main/av_stream
 
 [motion]
 
-max_image_object_size = 2764800
+max_image_object_size = 1075200
 gaussian_kernel_size = 11
 pixel_delta_threshold = 25
 delta_frame_opening = 5

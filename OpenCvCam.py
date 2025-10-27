@@ -314,7 +314,7 @@ while True:
             image_width, image_height, image_depth = image.shape
             motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
 
-            if (int(motion_config['draw_contour_debug']) == True) or (int(motion_config['draw_potentially_significant_motion_debug']) == True):
+            if int(general_config['save_motion_images']) == True:
                 logger.info("%s : motion detection at %s", camera_name, motion_box)
                 dest_path = general_config['media_directory'] + "/motion/" + camera_name + "/" + timestamp +".jpg"
                 cv2.imwrite(dest_path, image)
@@ -346,7 +346,7 @@ while True:
                     if object in whitelist:
                         something_in_whitelist.append([object,confidence,box,motion_box])
                     if not in_blacklist:
-                        logger.debug("%s : %s confidence %.2f at %s, trigger %s", camera_name, object, confidence, box, motion_box) 
+                        logger.info("%s : %s confidence %.2f at %s, trigger %s", camera_name, object, confidence, box, motion_box) 
 
                     #
                     # Then draw boxes here and not in helper file and change opencv_yolo_detection above
@@ -390,15 +390,17 @@ while True:
                         message = camera_name + ":" + highest_confidence_object[0] + ":" + str(x) + " " + str(y)
 
                         mqtt_client.publish(mqtt_config["mqtt_topic"], message) 
-                                
-                    logger.info("%s : %s confidence %.3f in whitelist at %s, motion trigger %s",
-                                camera_name,
-                                highest_confidence_object[0],
-                                highest_confidence_object[1],
-                                highest_confidence_object[2],
-                                highest_confidence_object[3],)
-                    dest_path = general_config['media_directory'] + "/inference/" + camera_name + "/" + timestamp +".jpg"
-                    cv2.imwrite(dest_path, image)
+
+                    if int(general_config['save_inference_whitelist_images']) == True:            
+                        logger.info("%s : %s confidence %.3f in whitelist at %s, motion trigger %s",
+                                    camera_name,
+                                    highest_confidence_object[0],
+                                    highest_confidence_object[1],
+                                    highest_confidence_object[2],
+                                    highest_confidence_object[3],)
+                        
+                        dest_path = general_config['media_directory'] + "/inference/" + camera_name + "/" + timestamp +".jpg"
+                        cv2.imwrite(dest_path, image)
             
             logger.debug("Procesesed a frame for %s", camera_name) 
             writer_flag[camera_name].clear()
