@@ -1,3 +1,0 @@
-Test video up / down code 
-
-Hailo integration
