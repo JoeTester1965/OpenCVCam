@@ -1,77 +1,85 @@
-
-*** To Do ***
-
 # OpenCVCam
 
-Based on [CudaCamz](https://github.com/JoeTester1965/CudaCamz)
+Monitor multiple cameras using opencv and optionally hailo AI accelerator
 
 # Installation
 
 Tested on Debian 1:6.12.34-1+rpt1~bookworm (2025-06-26) aarch64 GNU/Linux
 
-# Notes for later
+First install  DegirumSDK for hailo if needed at https://github.com/DeGirum/hailo_examples
 
-only creates new cron file if not exists
+And while still in python venv used for above
 
-if inferenece type none saves images from motion detect
+```console
+pip3 install paho-mqtt
+```
 
-disabled service, single process only but quicke n pi appartently: sudo systemctl stop hailort
-
+Then install rest of what is needed here for camera processing and opencv inferenece
 
 ```console
 sudo apt-get update 
 sudo apt-get upgrade
 sudo apt-get install python3-paho-mqtt python3-pill python3-opencv
 cd yoloo
-wget https://www.kaggle.com/datasets/shivam316/yolov3-weights
+wget https://data.pjreddie.com/files/yolov3.weights
 cd ..
 chmod u+x *.sh
-./start.sh
 ```
 
-Hailo
-
-install https://github.com/DeGirum/hailo_examples
-source ../hailo_examples/degirum_env/bin/activate
-pip3 install paho-mqtt
-
-CTRL SHIFT P : Python Select Interpteter ../hailo/examples/degirum_env/bin/python3.11    
-
-# Configuration file
-
-Edit the [config file](DrumDetector.ini) to adjust the following
+# Output directory structure
 
 | Key | Notes |
+| inference  | Contains images where have beem inference hits (cat, person etc) from each camera. |
+| mask  | Motion detection masks for each camera. copy to mask.jpg then colour areas white to keep and black to mask out  |
+| motion  | Contains images where motion has been detected from each camera. |
+| video  | Video recorded by cron_hourly.sh srcipt which is created when running if does not already exist. |
+
+# Configuration file config.txt
+
+Adapt this to your own needs
+
+*general*
+| Name | Notes |
 | TBD  | TBD |
 | TBD  | TBD |
 | TBD  | TBD |
+
+*cameras_detection*
+
+*recorded_video*
 
 # Starting and stopping
 
 ```console
-bash start.sh
+bash ./start.sh
 ```
 
 ```console
-bash stop.sh
+bash ./stop.sh
 ```
 
-# Example output
+# Recording video
 
-TBD
+If cron_hourly.sh does not exist in your installation folder, then OpenCVCam will create for you.
 
-***TBD,TBD***
-
+Put an entry in crontab to run this e.g.
 
 ```console
-TBD
+@reboot sleep 300 && cd /home/pi/Documents/OpenCVCam && ./start.sh
+0 * * * * cd /home/pi/Documents/OpenCVCam && ./cron_hourly.sh
 ```
 
 # Notes
 
-TBD
+If only using this for hailo AI accelerator then disable hailo sharing service for better performance:
 
-Enjoy!
+```console
+sudo service hailort stop
+sudo systemctl mask hailort
+```
+```
+
+
 
 
 
