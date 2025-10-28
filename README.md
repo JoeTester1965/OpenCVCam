@@ -74,10 +74,10 @@ Adapt this to your own needs
 | --------- |:-------|
 | Self explanatory | See example file |
 
-Will notify of highest confidence whitelisted event in a camera frame, example message sent being:
+Will notify of highest confidence whitelisted event in a camera frame, with center of object x and y as a fraction of frame size e.g.:
 
 ```console
-test_video:person:
+test_video:person:0.59 0.62
 ```
 
 # Starting and stopping

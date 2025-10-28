@@ -30,6 +30,8 @@ class VideoStreamWidget(object):
         self.gray = None
         self.mask = None
         self.image_pixels = None
+        self.width = None
+        self.height = None
         self.status = None
         self.frame = None
         self.uri=uri
@@ -39,6 +41,9 @@ class VideoStreamWidget(object):
         self.thread = Thread(target=self.update, args=())
         self.thread.daemon = True
         self.thread.start()
+
+    def get_width_and_height(self):
+        return self.width,self.height
     
     def bring_up_camera(self):
 
@@ -79,7 +84,9 @@ class VideoStreamWidget(object):
                 if self.last_frame is None:
                     self.last_frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
                     self.last_frame = cv2.GaussianBlur(self.last_frame, (int(self.motion_config['gaussian_kernel_size']),int(self.motion_config['gaussian_kernel_size'])), 0)
-                    width,height = self.last_frame.shape
+                    height,width = self.last_frame.shape
+                    self.width = width
+                    self.height = height
                     self.image_pixels = width * height
                     masks_directory = self.motion_config['masks_directory']
                     mask_template_name = f'{masks_directory}/{self.name}/mask.jpg'
@@ -87,7 +94,7 @@ class VideoStreamWidget(object):
                         #use existing mask
                         self.mask = cv2.imread(mask_template_name)
                         self.mask = cv2.cvtColor(self.mask, cv2.COLOR_BGR2GRAY)
-                        width,height = self.mask.shape
+                        height,width = self.mask.shape
                         if width*height != self.image_pixels:
                             #video size has changed, cannot use current mask
                             self.mask = None
@@ -311,7 +318,7 @@ while True:
             x,y,width,height = writer_queue[camera_name].get()
             image = writer_shared_memory[camera_name]
 
-            image_width, image_height, image_depth = image.shape
+            image_height, image_width, image_depth = image.shape
             motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
 
             if int(general_config['save_motion_images']) == True:
@@ -384,7 +391,12 @@ while True:
                     if config.has_section("mqtt"):
                         mqtt_config = config['mqtt']
 
-                        message = camera_name + ":" + highest_confidence_object[0]
+                        camera_width,camera_height = streams[camera_name].get_width_and_height()
+
+                        x = round(((box[0] + box[2])/2)/camera_width,2)
+                        y = round(((box[1] + box[3])/2)/camera_height,2)
+
+                        message = camera_name + ":" + highest_confidence_object[0] + ":" + str(x) + " " + str(y)
 
                         mqtt_client.publish(mqtt_config["mqtt_topic"], message) 
 
