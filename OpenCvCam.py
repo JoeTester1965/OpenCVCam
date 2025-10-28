@@ -202,7 +202,6 @@ log_level_info = {  "DEBUG" : logging.DEBUG,
 my_log_level = log_level_info[my_log_level_from_config]
 
 logging.basicConfig(    handlers=[
-								logging.FileHandler(logfile),
 								logging.StreamHandler(),
                                 TimedRotatingFileHandler(logfile,when="midnight",interval=1,backupCount=7)],
 						format='%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
