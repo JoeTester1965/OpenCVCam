@@ -34,7 +34,7 @@ chmod u+x *.sh
 | --------- |:-------|
 | inference  | Contains images where have beem inference hits (cat, person etc) from each camera. |
 | mask  | Motion detection masks for each camera. copy to mask.jpg then colour areas white to keep and black to mask out  |
-| motion  | Contains images where motion has been detected from each camera. |
+| motion_masks  | Contains images where motion has been detected from each camera. |
 | video  | Video recorded by cron_hourly.sh srcipt which is created when running if does not already exist. |
 
 # Configuration file config.txt

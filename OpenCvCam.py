@@ -249,7 +249,7 @@ for name,uri in cameras_config.items():
 for name,uri in recorded_video_config.items():
     Path(general_config['media_directory'] + "/video/" + name).mkdir(exist_ok=True)
     with open(cron_hourly_file, "a") as f:
-        line = "nohup ffmpeg -i '" + uri + "' -vcodec copy -t 3540 -y " + general_config['media_directory'] + "/video/" + name + "/$(date +\%Y\%m\%d\%H).mp4 > /dev/null 2>&1 < /dev/null &\n"
+        line = "nohup ffmpeg -i '" + uri + "' -vcodec copy -t 3540 -y " + general_config['media_directory'] + "/video/" + name + "/$(date +\%Y\-%m\-%d\-%H-%M-%S).mp4 > /dev/null 2>&1 < /dev/null &\n"   
         f.write(line)
 
 with open(cron_hourly_file, "a") as f:
