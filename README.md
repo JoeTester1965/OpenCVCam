@@ -1,6 +1,8 @@
 # OpenCVCam
 
-Monitor multiple cameras using opencv and optionally hailo AI accelerator
+Record multiple cameras and events using ffmpeg and opencv with motion and optionally hailo AI accelerator for object detection.
+
+My Pi5 and Hailo-8L is sailing along with five cameras operational at home.
 
 # Installation
 
@@ -14,7 +16,7 @@ And while still in python venv used for above
 pip3 install paho-mqtt
 ```
 
-Then install rest of what is needed here for camera processing and opencv inferenece
+Then install rest of what is needed here for camera processing and opencv inference
 
 ```console
 sudo apt-get update 
@@ -58,6 +60,7 @@ Adapt this to your own needs
 | Name | Notes |
 | --------- |:-------|
 | Mostly self explanatory up to max_image_object_size | See example file, leave rest alone, took time to tune. |
+| max_image_object_size | IMPORTANT : set this to maximum image object size seen in logfile output when cameras starting up (-; |
 
 *inference-opencv*
 | Name | Notes |
