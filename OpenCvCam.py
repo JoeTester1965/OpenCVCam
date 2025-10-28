@@ -4,12 +4,12 @@ import numpy as np;
 import configparser
 import sys
 import logging
+from logging.handlers import TimedRotatingFileHandler
 from threading import Thread,Event
 import queue
 import time
 import os
 from pathlib import Path
-import shutil
 from PIL import Image
 from helpers import opencv_yolo_detection
 from helpers import hailo_yolo_detection
@@ -18,7 +18,6 @@ import paho.mqtt.client as mqtt
 from multiprocessing import shared_memory
 import stat
 import degirum as dg
-import math
 
 class VideoStreamWidget(object):
     def __init__(self, name, uri, motion_config):
@@ -204,7 +203,8 @@ my_log_level = log_level_info[my_log_level_from_config]
 
 logging.basicConfig(    handlers=[
 								logging.FileHandler(logfile),
-								logging.StreamHandler()],
+								logging.StreamHandler(),
+                                TimedRotatingFileHandler(logfile,when="midnight",interval=1,backupCount=7)],
 						format='%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
 						datefmt='%Y-%m-%d:%H:%M:%S',
 						level=my_log_level)
@@ -322,7 +322,7 @@ while True:
             motion_box = [int(x), int(y), int(x) + int(width), int(y) + int(height)]
 
             if int(general_config['save_motion_images']) == True:
-                logger.info("%s : motion detection at %s", camera_name, motion_box)
+                logger.debug("%s : motion detection at %s", camera_name, motion_box)
                 dest_path = general_config['media_directory'] + "/motion/" + camera_name + "/" + timestamp +".jpg"
                 cv2.imwrite(dest_path, image)
                 writer_flag[camera_name].clear()
@@ -353,11 +353,8 @@ while True:
                     if object in whitelist:
                         something_in_whitelist.append([object,confidence,box,motion_box])
                     if not in_blacklist:
-                        logger.info("%s : %s confidence %.2f at %s, trigger %s", camera_name, object, confidence, box, motion_box) 
+                        logger.info("%s : %s confidence %.2f at %s with motion trigger %s", camera_name, object, confidence, box.flatten().tolist(), motion_box) 
 
-                    #
-                    # Then draw boxes here and not in helper file and change opencv_yolo_detection above
-                    #
                     if draw_inference_boxes:
                         pt1_x = box[0]
                         pt1_y = box[1]
@@ -400,14 +397,7 @@ while True:
 
                         mqtt_client.publish(mqtt_config["mqtt_topic"], message) 
 
-                    if int(general_config['save_inference_whitelist_images']) == True:            
-                        logger.info("%s : %s confidence %.3f in whitelist at %s, motion trigger %s",
-                                    camera_name,
-                                    highest_confidence_object[0],
-                                    highest_confidence_object[1],
-                                    highest_confidence_object[2],
-                                    highest_confidence_object[3],)
-                        
+                    if int(general_config['save_inference_whitelist_images']) == True:                                
                         dest_path = general_config['media_directory'] + "/inference/" + camera_name + "/" + timestamp +".jpg"
                         cv2.imwrite(dest_path, image)
             
