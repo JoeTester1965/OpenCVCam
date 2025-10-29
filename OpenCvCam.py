@@ -180,7 +180,7 @@ def read_config(config_file):
 def draw_text(img, text,
           font=cv2.FONT_HERSHEY_PLAIN,
           pos=(0, 0),
-          font_scale=2,
+          font_scale=1,
           font_thickness=1,
           text_color=(255, 255, 255),
           text_color_bg=(0, 0, 0)
@@ -371,24 +371,13 @@ while True:
                         logger.debug("%s : %s confidence %.2f at %s with motion trigger %s", camera_name, object, confidence, box.flatten().tolist(), motion_box) 
 
                     if draw_inference_boxes:
-
-                        pt1_x = box[0]
-                        pt1_y = box[1]
-                        pt2_x = box[2]
-                        pt2_y = box[3]
-
-                        cv2.rectangle(image, (pt1_x, pt1_y), (pt2_x, pt2_y), (100,100,100), 2)
+                        cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (255,255,255), 2)
                         text = str(object) + ":" + str(round(confidence,2))
-                        w, h = draw_text(image, text, pos=(pt1_x, pt1_y))
+                        w, h = draw_text(image, text, pos=(box[0], box[1]))
 
                 #draw boxes for primary motion detection
                 if draw_inference_boxes: 
-                    pt1_x = motion_box[0]
-                    pt1_y = motion_box[1]
-                    pt2_x = motion_box[2]
-                    pt2_y = motion_box[3]
-
-                    cv2.rectangle(image, (pt1_x, pt1_y), (pt2_x, pt2_y), (255,255,255), 2)
+                    cv2.rectangle(image, (motion_box[0], motion_box[1]), (motion_box[2], motion_box[3]), (100,100,100), 2)
 
                 highest_confidence_object = {}         
                     
@@ -406,6 +395,11 @@ while True:
                 if len(highest_confidence_object) > 0:
                     logger.info("%s : %s confidence %.2f at %s with motion trigger %s", camera_name, 
                                 highest_confidence_object[0], highest_confidence_object[1], highest_confidence_object[2].flatten().tolist(), motion_box)
+                    
+                    if draw_inference_boxes:
+                        x1,y1,x2,y2 = highest_confidence_object[2].flatten().tolist()
+                        cv2.rectangle(image, (x1, y1), (x2,y2), (0,0,255), 3)
+                    
                     if config.has_section("mqtt"):
                         mqtt_config = config['mqtt']
 
