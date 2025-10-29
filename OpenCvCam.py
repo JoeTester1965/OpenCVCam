@@ -389,8 +389,6 @@ while True:
                     pt2_y = motion_box[3]
 
                     cv2.rectangle(image, (pt1_x, pt1_y), (pt2_x, pt2_y), (255,255,255), 2)
-                    text = "motion detected" 
-                    w, h = draw_text(image, text, pos=(pt1_x, pt1_y), text_color=(0,0,0), text_color_bg=(255, 255, 255))                       
 
                 highest_confidence_object = {}         
                     
