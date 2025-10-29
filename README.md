@@ -125,6 +125,14 @@ sudo service hailort stop
 sudo systemctl mask hailort
 ```
 
+# Tips 
+
+This command will find rtsp cameras on your network
+
+```console
+nmap -p 554 192.168.1.0/24 -oG - | grep "/open" | awk '{ print $2 }'
+```
+
 
 
 
