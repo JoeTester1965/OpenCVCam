@@ -47,7 +47,6 @@ class VideoStreamWidget(object):
     def bring_up_camera(self):
 
         logger.info("%s : Bringing up camera", self.name)
-    
         while self.camera_up == False:
             try:
                 self.capture = cv2.VideoCapture(self.uri)
@@ -177,6 +176,23 @@ def read_config(config_file):
     global config
     config = configparser.ConfigParser()
     config.read(config_file)
+
+def draw_text(img, text,
+          font=cv2.FONT_HERSHEY_PLAIN,
+          pos=(0, 0),
+          font_scale=2,
+          font_thickness=1,
+          text_color=(255, 255, 255),
+          text_color_bg=(0, 0, 0)
+          ):
+
+    x, y = pos
+    text_size, _ = cv2.getTextSize(text, font, font_scale, font_thickness)
+    text_w, text_h = text_size
+    cv2.rectangle(img, pos, (x + text_w, y + text_h), text_color_bg, -1)
+    cv2.putText(img, text, (x, y + text_h + font_scale - 1), font, font_scale, text_color, font_thickness)
+
+    return text_size
 
 if not os.path.isfile(sys.argv[1]):
     print("Need a config file please")
@@ -352,7 +368,7 @@ while True:
                     if object in whitelist:
                         something_in_whitelist.append([object,confidence,box,motion_box])
                     if not in_blacklist:
-                        logger.info("%s : %s confidence %.2f at %s with motion trigger %s", camera_name, object, confidence, box.flatten().tolist(), motion_box) 
+                        logger.debug("%s : %s confidence %.2f at %s with motion trigger %s", camera_name, object, confidence, box.flatten().tolist(), motion_box) 
 
                     if draw_inference_boxes:
 
@@ -361,15 +377,9 @@ while True:
                         pt2_x = box[2]
                         pt2_y = box[3]
 
-                        cv2.rectangle(image, (pt1_x, pt1_y), (pt2_x, pt2_y), (255,0,0), 2)
-                        text = str(object) + ":" + str(round(confidence,2))                        
-                        (t_w, t_h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, thickness=1)
-                        text_offset_x = 7
-                        text_offset_y = 7
-                        (text_box_x1, text_box_y1) = (pt1_x, pt1_y - (t_h + text_offset_y))
-                        (test_box_x2, text_box_y2) = ((pt1_x + t_w + text_offset_x), pt1_y)
-                        cv2.rectangle(image, (text_box_x1, text_box_y1), (test_box_x2, text_box_y2), (100,100,100), cv2.FILLED)
-                        cv2.putText(image, text, (pt1_x + text_offset_x, pt1_y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                        cv2.rectangle(image, (pt1_x, pt1_y), (pt2_x, pt2_y), (100,100,100), 2)
+                        text = str(object) + ":" + str(round(confidence,2))
+                        w, h = draw_text(image, text, pos=(pt1_x, pt1_y))
 
                 #draw boxes for primary motion detection
                 if draw_inference_boxes: 
@@ -378,15 +388,9 @@ while True:
                     pt2_x = motion_box[2]
                     pt2_y = motion_box[3]
 
-                    cv2.rectangle(image, (pt1_x, pt1_y), (pt2_x, pt2_y), (0,0,255), 2)
-                    text = "Significant motion detected"                       
-                    (t_w, t_h), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, thickness=1)
-                    text_offset_x = 7
-                    text_offset_y = 7
-                    (text_box_x1, text_box_y1) = (pt1_x, pt1_y - (t_h + text_offset_y))
-                    (test_box_x2, text_box_y2) = ((pt1_x + t_w + text_offset_x), pt1_y)
-                    cv2.rectangle(image, (text_box_x1, text_box_y1), (test_box_x2, text_box_y2), (100,100,100), cv2.FILLED)
-                    cv2.putText(image, text, (pt1_x + text_offset_x, pt1_y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                    cv2.rectangle(image, (pt1_x, pt1_y), (pt2_x, pt2_y), (255,255,255), 2)
+                    text = "motion detected" 
+                    w, h = draw_text(image, text, pos=(pt1_x, pt1_y), text_color=(0,0,0), text_color_bg=(255, 255, 255))                       
 
                 highest_confidence_object = {}         
                     
@@ -402,6 +406,8 @@ while True:
                     highest_confidence_object = something_in_whitelist[highest_confidence_index] 
 
                 if len(highest_confidence_object) > 0:
+                    logger.info("%s : %s confidence %.2f at %s with motion trigger %s", camera_name, 
+                                highest_confidence_object[0], highest_confidence_object[1], highest_confidence_object[2].flatten().tolist(), motion_box)
                     if config.has_section("mqtt"):
                         mqtt_config = config['mqtt']
 

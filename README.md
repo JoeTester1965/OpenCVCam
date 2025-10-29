@@ -60,7 +60,10 @@ Adapt this to your own needs
 | Name | Notes |
 | --------- |:-------|
 | Mostly self explanatory up to max_image_object_size | See example file, leave rest alone, took time to tune. |
-| max_image_object_size | IMPORTANT : set this to maximum image object size seen in logfile output when cameras starting up (-; |
+| max_image_object_size | IMPORTANT : set this to maximum image object size seen in logfile output when cameras starting up |
+| pixel_delta_threshold | decrease for higher motion detection sensitivty |
+| minimum_motion_screen_percent | decrease for lower motion detection sensitivty |
+| fps | target fps you want processing all the cameras with inferemce, will log an error if does not happen. Will see at startup if any inference models initially loading. |
 
 *inference-opencv*
 | Name | Notes |
