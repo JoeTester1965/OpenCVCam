@@ -34,16 +34,15 @@ drive = rtsp://192.168.1.14:554/user=admin&password=password&channel=1&stream=0.
 sannce = rtsp://admin:password@192.168.1.17:554/H264/ch1/main/av_stream
 
 [motion]
-
 draw_contour_debug = 0
 draw_potentially_significant_motion_debug = 0
 masks_directory = /media/pi/opencvcam/masks
 fps = 10
 max_image_object_size = 1075200
 gaussian_kernel_size = 11
-pixel_delta_threshold = 25
+pixel_delta_threshold = 8
 delta_frame_opening = 5
-minimum_motion_screen_percent = 0.25
+minimum_motion_screen_percent = 0.05
 motion_contours_to_consider = 10
 contour_combine_distance = 50
 
