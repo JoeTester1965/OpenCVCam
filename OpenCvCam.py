@@ -244,12 +244,8 @@ Path(motion_config['masks_directory']).mkdir(exist_ok=True)
 Path(general_config['media_directory']).mkdir(exist_ok=True)
 Path(general_config['media_directory'] + "/inference").mkdir(exist_ok=True)
 Path(general_config['media_directory'] + "/motion").mkdir(exist_ok=True)
-Path(general_config['media_directory'] + "/video").mkdir(exist_ok=True)
 
 cron_hourly_file =  "cron_hourly.sh"
-
-with open(cron_hourly_file, "w") as f:
-    f.write("#!/bin/sh\n")
 
 for name,uri in cameras_config.items():
     writer_shared_memory[name] = shared_memory.SharedMemory(create=True, size= int(motion_config['max_image_object_size']))
@@ -260,17 +256,25 @@ for name,uri in cameras_config.items():
     
     writer_flag[name] = Event() 
     writer_queue[name] = queue.Queue()
-    
-for name,uri in recorded_video_config.items():
-    Path(general_config['media_directory'] + "/video/" + name).mkdir(exist_ok=True)
-    with open(cron_hourly_file, "a") as f:
-        line = "nohup ffmpeg -i '" + uri + "' -vcodec copy -t 3540 -y " + general_config['media_directory'] + "/video/" + name + "/$(date +\%Y\-%m\-%d\-%H-%M-%S).mp4 > /dev/null 2>&1 < /dev/null &\n"   
-        f.write(line)
 
-with open(cron_hourly_file, "a") as f:
+with open(cron_hourly_file, "w") as f:
+    f.write("#!/bin/sh\n")
+    f.write("BASEDIRECTORY=" + general_config['media_directory'] + "/video\n")
+    f.write("YEAR=$(date +\"%Y\")\n")
+    f.write("MONTH=$(date +\"%m\")\n")
+    f.write("DAY=$(date +\"%d\")\n")
+    f.write("HOUR=$(date +\"%H\")\n")
+    f.write("MINUTE=$(date +\"%M\")\n")
+    f.write("SECOND=$(date +\"%S\")\n")
+    f.write("SUBDIRECTORY=$DAY-$MONTH-$YEAR\n")
+    f.write("FILENAME=$HOUR-$MINUTE-$SECOND\n")
+    for name,uri in recorded_video_config.items():
+        line = "mkdir -p $BASEDIRECTORY/" + name + "/$SUBDIRECTORY\n"
+        f.write(line)
+        line = "nohup ffmpeg -i '" + uri + "' -vcodec copy -t 3540 -y $BASEDIRECTORY/" + name + "/$SUBDIRECTORY/$FILENAME.mp4 > /dev/null 2>&1 < /dev/null &\n"   
+        f.write(line)
     line = "find " + general_config['media_directory'] + " -mtime " + general_config['days_media_stored'] + " -delete"
     f.write(line)
-
 st = os.stat(cron_hourly_file)
 os.chmod(cron_hourly_file, st.st_mode | stat.S_IEXEC)
 
