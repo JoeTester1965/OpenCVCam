@@ -202,11 +202,13 @@ def create_daily_directories():
     current_day = datetime.now().day
     current_month = datetime.now().month
     current_year = datetime.now().year
-    for name,uri in cameras_config.items():
-        daily_filepath_name = str(current_day) + "-" + str(current_month) + "-" + str(current_year)
-        Path(general_config['media_directory'] + "/inference/" + name + "/" + daily_filepath_name).mkdir(exist_ok=True)
-        Path(general_config['media_directory'] + "/motion/" + name + "/" + daily_filepath_name).mkdir(exist_ok=True)
+    daily_filepath_name = str(current_day) + "-" + str(current_month) + "-" + str(current_year)
     global_daily_filepath_name = daily_filepath_name
+    for name,uri in cameras_config.items():
+        Path(general_config['media_directory'] + "/inference/" + name).mkdir(exist_ok=True)
+        Path(general_config['media_directory'] + "/inference/" + name + "/" + daily_filepath_name).mkdir(exist_ok=True)
+        Path(general_config['media_directory'] + "/motion/" + name).mkdir(exist_ok=True)
+        Path(general_config['media_directory'] + "/motion/" + name + "/" + daily_filepath_name).mkdir(exist_ok=True)
 
 if not os.path.isfile(sys.argv[1]):
     print("Need a config file please")
