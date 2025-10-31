@@ -13,7 +13,7 @@ First install  DegirumSDK for hailo if needed at https://github.com/DeGirum/hail
 And while still in python venv used for above
 
 ```console
-pip3 install paho-mqtt
+pip3 install paho-mqtt schedule
 ```
 
 Then install rest of what is needed here for camera processing and opencv inference

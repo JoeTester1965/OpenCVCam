@@ -18,6 +18,7 @@ import paho.mqtt.client as mqtt
 from multiprocessing import shared_memory
 import stat
 import degirum as dg
+import schedule
 
 class VideoStreamWidget(object):
     def __init__(self, name, uri, motion_config):
@@ -194,6 +195,19 @@ def draw_text(img, text,
 
     return text_size
 
+global_daily_filepath_name = None
+
+def create_daily_directories():
+    global global_daily_filepath_name
+    current_day = datetime.now().day
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+    for name,uri in cameras_config.items():
+        daily_filepath_name = str(current_day) + "-" + str(current_month) + "-" + str(current_year)
+        Path(general_config['media_directory'] + "/inference/" + name + "/" + daily_filepath_name).mkdir(exist_ok=True)
+        Path(general_config['media_directory'] + "/motion/" + name + "/" + daily_filepath_name).mkdir(exist_ok=True)
+    global_daily_filepath_name = daily_filepath_name
+
 if not os.path.isfile(sys.argv[1]):
     print("Need a config file please")
     sys.exit()
@@ -253,6 +267,7 @@ for name,uri in cameras_config.items():
     Path(motion_config['masks_directory'] + "/" + name).mkdir(exist_ok=True)
     Path(general_config['media_directory'] + "/inference/" + name).mkdir(exist_ok=True)
     Path(general_config['media_directory'] + "/motion/" + name).mkdir(exist_ok=True)
+    create_daily_directories()
     
     writer_flag[name] = Event() 
     writer_queue[name] = queue.Queue()
@@ -320,6 +335,8 @@ if config.has_section("mqtt"):
     except:
         logger.error("Cannot connect to MQTT server at %s:%s", mqtt_config["mqtt_ip_address"], mqtt_config["mqtt_port"])
 
+schedule.every().day.at('13:47').do(create_daily_directories)
+
 while True:
     start_time = time.time()
     for camera_name,uri in cameras_config.items():
@@ -342,7 +359,7 @@ while True:
 
             if int(general_config['save_motion_images']) == True:
                 logger.debug("%s : motion detection at %s", camera_name, motion_box)
-                dest_path = general_config['media_directory'] + "/motion/" + camera_name + "/" + timestamp +".jpg"
+                dest_path = general_config['media_directory'] + "/motion/" + camera_name + "/" + global_daily_filepath_name + "/" + timestamp +".jpg"
                 cv2.imwrite(dest_path, image)
                 writer_flag[camera_name].clear()
             
@@ -417,7 +434,7 @@ while True:
                         mqtt_client.publish(mqtt_config["mqtt_topic"], message) 
 
                     if int(general_config['save_inference_whitelist_images']) == True:                                
-                        dest_path = general_config['media_directory'] + "/inference/" + camera_name + "/" + timestamp +".jpg"
+                        dest_path = general_config['media_directory'] + "/inference/" + camera_name + "/" + global_daily_filepath_name + "/" + timestamp +".jpg"
                         cv2.imwrite(dest_path, image)
             
             logger.debug("Procesesed a frame for %s", camera_name) 
