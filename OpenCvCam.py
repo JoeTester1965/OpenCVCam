@@ -18,7 +18,6 @@ import paho.mqtt.client as mqtt
 from multiprocessing import shared_memory
 import stat
 import degirum as dg
-import schedule
 
 class VideoStreamWidget(object):
     def __init__(self, name, uri, motion_config):
@@ -196,19 +195,33 @@ def draw_text(img, text,
     return text_size
 
 global_daily_filepath_name = None
+global_last_daily_filepath_name = None
 
 def create_daily_directories():
     global global_daily_filepath_name
+    global global_last_daily_filepath_name
+    
+    need_to_create_directories = False
+
+    if global_last_daily_filepath_name == None:
+        need_to_create_directories = True
+
     current_day = datetime.now().day
     current_month = datetime.now().month
     current_year = datetime.now().year
     daily_filepath_name = str(current_day) + "-" + str(current_month) + "-" + str(current_year)
     global_daily_filepath_name = daily_filepath_name
-    for name,uri in cameras_config.items():
-        Path(general_config['media_directory'] + "/inference/" + name).mkdir(exist_ok=True)
-        Path(general_config['media_directory'] + "/inference/" + name + "/" + daily_filepath_name).mkdir(exist_ok=True)
-        Path(general_config['media_directory'] + "/motion/" + name).mkdir(exist_ok=True)
-        Path(general_config['media_directory'] + "/motion/" + name + "/" + daily_filepath_name).mkdir(exist_ok=True)
+
+    if global_last_daily_filepath_name != global_daily_filepath_name:
+        need_to_create_directories = True
+    
+    if need_to_create_directories:
+        global_last_daily_filepath_name = global_daily_filepath_name
+        for name,uri in cameras_config.items():
+            Path(general_config['media_directory'] + "/inference/" + name).mkdir(exist_ok=True)
+            Path(general_config['media_directory'] + "/inference/" + name + "/" + daily_filepath_name).mkdir(exist_ok=True)
+            Path(general_config['media_directory'] + "/motion/" + name).mkdir(exist_ok=True)
+            Path(general_config['media_directory'] + "/motion/" + name + "/" + daily_filepath_name).mkdir(exist_ok=True)
 
 if not os.path.isfile(sys.argv[1]):
     print("Need a config file please")
@@ -337,9 +350,8 @@ if config.has_section("mqtt"):
     except:
         logger.error("Cannot connect to MQTT server at %s:%s", mqtt_config["mqtt_ip_address"], mqtt_config["mqtt_port"])
 
-schedule.every().day.at('13:47').do(create_daily_directories)
-
 while True:
+    create_daily_directories()
     start_time = time.time()
     for camera_name,uri in cameras_config.items():
         try:
