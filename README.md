@@ -8,7 +8,7 @@ My Pi5 and Hailo-8L is sailing along with five cameras operational at home (-;
 
 Tested on Debian 1:6.12.34-1+rpt1~bookworm (2025-06-26) aarch64 GNU/Linux
 
-First install  DegirumSDK for hailo if needed at https://github.com/DeGirum/hailo_examples
+First install  DegirumSDK for hailo if needed using my local fork here https://github.com/JoeTester1965/hailo_examples or at https://github.com/DeGirum/hailo_examples
 
 And while still in python venv used for above
 
