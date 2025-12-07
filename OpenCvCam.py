@@ -410,9 +410,8 @@ while True:
                         text = str(object) + ":" + str(round(confidence,2))
                         w, h = draw_text(image, text, pos=(box[0], box[1]))
 
-                #draw boxes for primary motion detection
-                if draw_inference_boxes: 
-                    cv2.rectangle(image, (motion_box[0], motion_box[1]), (motion_box[2], motion_box[3]), (100,100,100), 2)
+                #always draw primary motion trigger
+                cv2.rectangle(image, (motion_box[0], motion_box[1]), (motion_box[2], motion_box[3]), (100,100,100), 2)
 
                 highest_confidence_object = {}         
                     
@@ -431,9 +430,9 @@ while True:
                     logger.info("%s : %s confidence %.2f at %s with motion trigger %s", camera_name, 
                                 highest_confidence_object[0], highest_confidence_object[1], highest_confidence_object[2].flatten().tolist(), motion_box)
                     
-                    if draw_inference_boxes:
-                        x1,y1,x2,y2 = highest_confidence_object[2].flatten().tolist()
-                        cv2.rectangle(image, (x1, y1), (x2,y2), (0,0,255), 3)
+                    #always draw primary inference
+                    x1,y1,x2,y2 = highest_confidence_object[2].flatten().tolist()
+                    cv2.rectangle(image, (x1, y1), (x2,y2), (0,0,255), 2)
                     
                     if config.has_section("mqtt"):
                         mqtt_config = config['mqtt']
