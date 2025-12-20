@@ -177,6 +177,15 @@ def read_config(config_file):
     config = configparser.ConfigParser()
     config.read(config_file)
 
+def intersection(a,b):
+  x = max(a[0], b[0])
+  y = max(a[1], b[1])
+  w = min(a[0]+a[2], b[0]+b[2]) - x
+  h = min(a[1]+a[3], b[1]+b[3]) - y
+  if w<0 or h<0:
+      return None
+  return (x, y, w, h)
+
 def draw_text(img, text,
           font=cv2.FONT_HERSHEY_PLAIN,
           pos=(0, 0),
@@ -413,18 +422,25 @@ while True:
                 #always draw primary motion trigger
                 cv2.rectangle(image, (motion_box[0], motion_box[1]), (motion_box[2], motion_box[3]), (100,100,100), 2)
 
-                highest_confidence_object = {}         
+                highest_confidence_object = {}
+                highest_confidence_index = 0            
                     
                 if len(something_in_whitelist) > 0:
                     
                     highest_confidence_found = 0.0 
-                    highest_confidence_index = 0     
+                      
                     for index,object  in enumerate(something_in_whitelist):
-                        if object[1] > highest_confidence_found:
+                        # If motion_box overlaps inferece box take that as primary significant event
+                        if intersection(motion_box, box) != None:
+                            highest_confidence_found = object[1]
+                            highest_confidence_index = index
+                            break
+                        # Otherwise have hisghest confidence as primary significant event   
+                        elif object[1] > highest_confidence_found:
                             highest_confidence_found = object[1]
                             highest_confidence_index = index
 
-                    highest_confidence_object = something_in_whitelist[highest_confidence_index] 
+                highest_confidence_object = something_in_whitelist[highest_confidence_index]  
 
                 if len(highest_confidence_object) > 0:
                     logger.info("%s : %s confidence %.2f at %s with motion trigger %s", camera_name, 
