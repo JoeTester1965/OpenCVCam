@@ -440,9 +440,8 @@ while True:
                             highest_confidence_found = object[1]
                             highest_confidence_index = index
 
-                highest_confidence_object = something_in_whitelist[highest_confidence_index]  
+                    highest_confidence_object = something_in_whitelist[highest_confidence_index]  
 
-                if len(highest_confidence_object) > 0:
                     logger.info("%s : %s confidence %.2f at %s with motion trigger %s", camera_name, 
                                 highest_confidence_object[0], highest_confidence_object[1], highest_confidence_object[2].flatten().tolist(), motion_box)
                     
