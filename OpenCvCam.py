@@ -312,8 +312,62 @@ with open(cron_hourly_file, "w") as f:
         f.write(line)
         line = "nohup ffmpeg -i '" + uri + "' -vcodec copy -t 3660 -y $BASEDIRECTORY/" + name + "/$SUBDIRECTORY/$FILENAME.mp4 > /dev/null 2>&1 < /dev/null &\n"   
         f.write(line)
+
+    # pre-delete actions to maintain directory timestamp
+    line = "BASEDIRECTORY=" + general_config['media_directory']
+    f.write(line + '\n')
+    line = "ACTIONDIRS=\"video motion inference\""
+    f.write(line + '\n')
+    CAMERADIRS = "\""
+    for name,uri in recorded_video_config.items():
+        CAMERADIRS = CAMERADIRS + name + " "
+    CAMERADIRS = CAMERADIRS + "\""
+    line = "CAMERADIRS=" + CAMERADIRS
+    f.write(line + '\n')
+    line = "CSV_FILE=timestamplist.csv"
+    f.write(line + '\n')
+    line = "rm -f $CSV_FILE"
+    f.write(line + '\n')
+    line = "for ACTION in ${ACTIONDIRS}; do"
+    f.write(line + '\n')
+    line = "    for CAMERA in ${CAMERADIRS}; do" 
+    f.write(line + '\n')
+    line = "    TIMEDIRS=`ls $BASEDIRECTORY/$ACTION/$CAMERA`"
+    f.write(line + '\n')
+    line = "        for TIME in $TIMEDIRS; do"
+    f.write(line + '\n')
+    line = "            DIR=$BASEDIRECTORY/$ACTION/$CAMERA/$TIME"
+    f.write(line + '\n')
+    line = "            TIMESTAMP=`stat --format=%y $DIR`"
+    f.write(line + '\n')
+    line = "            echo \"$DIR\",\"$TIMESTAMP\" >> $CSV_FILE"
+    f.write(line + '\n')
+    line = "        done"
+    f.write(line + '\n')
+    line = "    done"
+    f.write(line + '\n')
+    line = "done"
+    f.write(line + '\n')
+
+    # delete old files
     line = "find " + general_config['media_directory'] + " -mtime " + general_config['days_media_stored'] + " -delete"
-    f.write(line)
+    f.write(line + '\n')
+
+    # post-delete actions to maintain directory timestamp
+
+    line = "while IFS=, read -r DIR TIMESTAMP"
+    f.write(line + '\n')
+    line = "do"
+    f.write(line + '\n')
+    line = "if [ -d $DIR ]; then"
+    f.write(line + '\n')
+    line = "    touch -d \"$TIMESTAMP\" $DIR"
+    f.write(line + '\n')
+    line = "fi"
+    f.write(line + '\n')
+    line = "done < $CSV_FILE"
+    f.write(line + '\n')
+
 st = os.stat(cron_hourly_file)
 os.chmod(cron_hourly_file, st.st_mode | stat.S_IEXEC)
 
