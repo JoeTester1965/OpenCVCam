@@ -503,7 +503,7 @@ while True:
                     x1,y1,x2,y2 = highest_confidence_object[2].flatten().tolist()
                     cv2.rectangle(image, (x1, y1), (x2,y2), (0,0,255), 2)
                     text = str(highest_confidence_object[0]) + ":" + str(round(highest_confidence_object[1],2))
-                    w, h = draw_text(image, text, pos=(box[0], box[1]))
+                    w, h = draw_text(image, text, pos=(highest_confidence_object[2][0], highest_confidence_object[2][1]))
                     
                     if config.has_section("mqtt"):
                         mqtt_config = config['mqtt']
