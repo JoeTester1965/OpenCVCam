@@ -10,6 +10,8 @@ Tested on Debian 1:6.12.34-1+rpt1~bookworm (2025-06-26) aarch64 GNU/Linux
 
 First install  DegirumSDK for hailo if needed using my local fork here https://github.com/JoeTester1965/hailo_examples or at https://github.com/DeGirum/hailo_examples
 
+This now borks on Bookworm, I had to use the installation script mentioned [here](https://docs.frigate.video/frigate/installation/#hailo-8) and change driver to 4.20.0 not 4.20.1. Will update OS one day but not use Frigate...
+
 And while still in python venv used for above
 
 ```console
