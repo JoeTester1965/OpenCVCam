@@ -307,10 +307,15 @@ with open(cron_hourly_file, "w") as f:
     f.write("SECOND=$(date +\"%S\")\n")
     f.write("SUBDIRECTORY=$DAY-$MONTH-$YEAR\n")
     f.write("FILENAME=$HOUR-$MINUTE-$SECOND\n")
+    f.write("LEEWAY_SECONDS=60\n")
+    f.write("MINUTES=$((60 - $MINUTE))\n")
+    f.write("SECONDS=$((60 - $SECOND))\n")
+    f.write("SECONDS_TO_RECORD=$(($MINUTES * 60 + $SECONDS + $LEEWAY_SECONDS))\n")
+
     for name,uri in recorded_video_config.items():
         line = "mkdir -p $BASEDIRECTORY/" + name + "/$SUBDIRECTORY\n"
         f.write(line)
-        line = "nohup ffmpeg -hide_banner -y -loglevel error -rtsp_transport tcp -use_wallclock_as_timestamps 1 -i '" + uri + "' -vcodec copy -acodec copy -t 3660 -y $BASEDIRECTORY/" + name + "/$SUBDIRECTORY/$FILENAME.mkv > /dev/null 2>&1 < /dev/null &\n"   
+        line = "nohup ffmpeg -hide_banner -y -loglevel error -rtsp_transport tcp -use_wallclock_as_timestamps 1 -i '" + uri + "' -vcodec copy -acodec copy -t $SECONDS_TO_RECORD -y $BASEDIRECTORY/" + name + "/$SUBDIRECTORY/$FILENAME.mkv > /dev/null 2>&1 < /dev/null &\n"   
         f.write(line)
 
     # pre-delete actions to maintain directory timestamp
